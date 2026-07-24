@@ -5,7 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f4f4f4;
+  background-color: #f8f9fa;
 }
 
 code {
@@ -15,6 +15,12 @@ code {
 
 .card {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
 }
 
 h1,
