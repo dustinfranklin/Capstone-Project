@@ -25,65 +25,39 @@ function Home() {
 
 
       <div className="row text-center">
-
         <div className="col-md-4">
-
           <div className="card shadow">
-
             <div className="card-body">
-
               <h3>🎥 Reviews</h3>
-
               <p>
                 Read reviews from other movie lovers.
               </p>
-
             </div>
-
           </div>
-
         </div>
 
-
         <div className="col-md-4">
-
           <div className="card shadow">
-
             <div className="card-body">
-
               <h3>⭐ Ratings</h3>
-
               <p>
                 Rate movies and share your opinions.
               </p>
-
             </div>
-
           </div>
-
         </div>
 
-
         <div className="col-md-4">
-
           <div className="card shadow">
-
             <div className="card-body">
-
               <h3>👥 Community</h3>
-
               <p>
                 Join discussions with other members.
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
