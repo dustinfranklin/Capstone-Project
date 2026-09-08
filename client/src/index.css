@@ -27,3 +27,8 @@ h1,
 h2 {
     margin-bottom: 20px;
 }
+
+.movie-poster {
+  height: 420px;
+  object-fit: cover;
+}

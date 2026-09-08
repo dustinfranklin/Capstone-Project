@@ -12,9 +12,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-list-endpoints": "^7.1.1",
+    "mongodb": "^7.6.0",
     "mongoose": "^9.9.1",
     "mysql2": "^3.23.2"
   },
