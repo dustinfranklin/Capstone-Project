@@ -141,8 +141,8 @@ function Home() {
 
   return (
     <div>
-      <h1 className="mb-4">
-        Movies
+      <h1 className="text-center mb-4 cinematic-heading">
+        Filmography
       </h1>
 
       {message && (
@@ -320,9 +320,17 @@ function Home() {
                 )}
 
                 <div className="card-body">
-                  <h5 className="card-title">
+                  <h5 className="card-title mb-2">
                     {movie.title}
                   </h5>
+
+                  {movie.mpaRating && (
+                    <div className="mb-3">
+                      <span className="movie-rating-label">
+                        {movie.mpaRating}
+                      </span>
+                    </div>
+                  )}
 
                   <p className="card-text mb-2">
                     <strong>

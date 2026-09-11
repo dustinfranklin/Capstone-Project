@@ -1,26 +1,83 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 function MovieDetails({ currentUser }) {
   const { id } = useParams();
 
   const [movie, setMovie] = useState(null);
-  const [message, setMessage] = useState("Loading movie...");
-
   const [reviews, setReviews] = useState([]);
-  const [reviewMessage, setReviewMessage] = useState(
-    "Loading reviews..."
+  const [message, setMessage] = useState(
+    "Loading movie..."
   );
 
-  const [rating, setRating] = useState("5");
-  const [reviewText, setReviewText] = useState("");
-  const [submitMessage, setSubmitMessage] = useState("");
+  const [rating, setRating] = useState(5);
+  const [reviewText, setReviewText] =
+    useState("");
+  const [reviewMessage, setReviewMessage] =
+    useState("");
 
   const [editingReviewId, setEditingReviewId] =
     useState(null);
-  const [editRating, setEditRating] = useState("5");
+  const [editRating, setEditRating] =
+    useState(5);
   const [editReviewText, setEditReviewText] =
     useState("");
+
+  useEffect(() => {
+    async function getMovie() {
+      try {
+        const response = await fetch(
+          `http://localhost:4000/api/movies/${id}`
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setMovie(data);
+          setMessage("");
+        } else {
+          setMessage(
+            data.message ||
+              "Could not load movie"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Movie fetch error:",
+          error
+        );
+
+        setMessage(
+          "Could not connect to the server"
+        );
+      }
+    }
+
+    getMovie();
+  }, [id]);
+
+  async function getReviews() {
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/movies/${id}/reviews`
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setReviews(data);
+      }
+    } catch (error) {
+      console.error(
+        "Reviews fetch error:",
+        error
+      );
+    }
+  }
+
+  useEffect(() => {
+    getReviews();
+  }, [id]);
 
   const averageRating =
     reviews.length > 0
@@ -41,64 +98,64 @@ function MovieDetails({ currentUser }) {
       )
     : null;
 
-  async function getReviews() {
-    try {
-      const response = await fetch(
-        `http://localhost:4000/api/movies/${id}/reviews`
-      );
+  function displayStars(ratingValue) {
+    const roundedRating = Math.round(
+      Number(ratingValue)
+    );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setReviews(data);
-        setReviewMessage("");
-      } else {
-        setReviewMessage("Could not load reviews");
-      }
-    } catch (error) {
-      console.error("Review fetch error:", error);
-      setReviewMessage(
-        "Could not connect to the server"
-      );
-    }
+    return (
+      <>
+        {"★".repeat(roundedRating)}
+        {"☆".repeat(5 - roundedRating)}
+      </>
+    );
   }
 
-  useEffect(() => {
-    async function getMovie() {
-      try {
-        const response = await fetch(
-          `http://localhost:4000/api/movies/${id}`
-        );
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setMovie(data);
-          setMessage("");
-        } else {
-          setMessage(data.message);
-        }
-      } catch (error) {
-        console.error(
-          "Movie details error:",
-          error
-        );
-
-        setMessage(
-          "Could not connect to the server"
-        );
-      }
-    }
-
-    getMovie();
-  }, [id]);
-
-  useEffect(() => {
-    getReviews();
-  }, [id]);
+  function StarSelector({
+    selectedRating,
+    setSelectedRating,
+  }) {
+    return (
+      <div
+        className="star-rating"
+        style={{
+          fontSize: "2rem",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        {[1, 2, 3, 4, 5].map(
+          (starNumber) => (
+            <span
+              key={starNumber}
+              onClick={() =>
+                setSelectedRating(
+                  starNumber
+                )
+              }
+              style={{
+                marginRight: "5px",
+              }}
+            >
+              {starNumber <= selectedRating
+                ? "★"
+                : "☆"}
+            </span>
+          )
+        )}
+      </div>
+    );
+  }
 
   async function handleReviewSubmit(event) {
     event.preventDefault();
+
+    if (!currentUser) {
+      setReviewMessage(
+        "You must be logged in to submit a review."
+      );
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -106,11 +163,12 @@ function MovieDetails({ currentUser }) {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             userId: currentUser.id,
-            rating,
+            rating: Number(rating),
             review: reviewText,
           }),
         }
@@ -118,12 +176,11 @@ function MovieDetails({ currentUser }) {
 
       const data = await response.json();
 
-      setSubmitMessage(data.message);
+      setReviewMessage(data.message);
 
       if (response.ok) {
-        setRating("5");
+        setRating(5);
         setReviewText("");
-
         await getReviews();
       }
     } catch (error) {
@@ -132,7 +189,7 @@ function MovieDetails({ currentUser }) {
         error
       );
 
-      setSubmitMessage(
+      setReviewMessage(
         "Could not connect to the server"
       );
     }
@@ -140,13 +197,16 @@ function MovieDetails({ currentUser }) {
 
   function startEditing(review) {
     setEditingReviewId(review._id);
-    setEditRating(String(review.rating));
+    setEditRating(
+      Number(review.rating)
+    );
     setEditReviewText(review.review);
+    setReviewMessage("");
   }
 
   function cancelEditing() {
     setEditingReviewId(null);
-    setEditRating("5");
+    setEditRating(5);
     setEditReviewText("");
   }
 
@@ -162,11 +222,12 @@ function MovieDetails({ currentUser }) {
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             userId: currentUser.id,
-            rating: editRating,
+            rating: Number(editRating),
             review: editReviewText,
           }),
         }
@@ -174,19 +235,22 @@ function MovieDetails({ currentUser }) {
 
       const data = await response.json();
 
+      setReviewMessage(data.message);
+
       if (response.ok) {
         setEditingReviewId(null);
-        setEditRating("5");
+        setEditRating(5);
         setEditReviewText("");
-
         await getReviews();
-      } else {
-        alert(data.message);
       }
     } catch (error) {
       console.error(
         "Edit review error:",
         error
+      );
+
+      setReviewMessage(
+        "Could not connect to the server"
       );
     }
   }
@@ -206,7 +270,8 @@ function MovieDetails({ currentUser }) {
         {
           method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             userId: currentUser.id,
@@ -216,17 +281,19 @@ function MovieDetails({ currentUser }) {
 
       const data = await response.json();
 
-      if (response.ok) {
-        setSubmitMessage("");
+      setReviewMessage(data.message);
 
+      if (response.ok) {
         await getReviews();
-      } else {
-        alert(data.message);
       }
     } catch (error) {
       console.error(
         "Delete review error:",
         error
+      );
+
+      setReviewMessage(
+        "Could not connect to the server"
       );
     }
   }
@@ -245,64 +312,111 @@ function MovieDetails({ currentUser }) {
 
   return (
     <div>
-      <Link
-        to="/"
-        className="btn btn-outline-secondary mb-4"
-      >
-        Back to Movies
-      </Link>
+      {/* MOVIE INFORMATION */}
+      <div className="row align-items-start mb-5 g-4">
 
-      <div className="row">
-        <div className="col-md-4">
+        {/* POSTER */}
+        <div className="col-lg-3 col-md-4">
           {movie.poster && (
             <img
               src={movie.poster}
               alt={`${movie.title} poster`}
-              className="img-fluid rounded shadow"
+              className="img-fluid rounded shadow movie-details-poster"
             />
           )}
         </div>
 
-        <div className="col-md-8">
-          <h1 className="mb-4">
+        {/* TITLE / SYNOPSIS / INFO */}
+        <div className="col-lg-5 col-md-8 text-center">
+          <h1 className="cinematic-heading movie-details-title">
             {movie.title}
           </h1>
 
-          <p className="fs-5">
-            <strong>Year:</strong>{" "}
-            {movie.year}
-          </p>
+          {movie.mpaRating && (
+            <div className="mb-3">
+              <span className="movie-rating-label">
+                {movie.mpaRating}
+              </span>
+            </div>
+          )}
 
-          <p className="fs-5">
-            <strong>Director:</strong>{" "}
-            {movie.director}
-          </p>
+          {movie.synopsis && (
+            <p className="movie-synopsis">
+              {movie.synopsis}
+            </p>
+          )}
 
-          <p className="fs-5">
-            <strong>Genre:</strong>{" "}
-            {movie.genre}
-          </p>
+          <div className="movie-details-info">
+            <p>
+              <strong>Year:</strong>{" "}
+              {movie.year}
+            </p>
 
-          <p className="fs-5">
-            <strong>
-              Average Rating:
-            </strong>{" "}
-            {averageRating
-              ? `${averageRating}/5`
-              : "No ratings yet"}
-          </p>
+            <p>
+              <strong>Genre:</strong>{" "}
+              {movie.genre}
+            </p>
 
-          <p className="text-muted">
-            {reviews.length}{" "}
-            {reviews.length === 1
-              ? "review"
-              : "reviews"}
-          </p>
+            <p>
+              <strong>Director:</strong>{" "}
+              {movie.director}
+            </p>
+
+            <p>
+              <strong>
+                Average Rating:
+              </strong>{" "}
+              {averageRating ? (
+                <>
+                  <span className="star-rating">
+                    {displayStars(
+                      averageRating
+                    )}
+                  </span>{" "}
+                  ({averageRating}/5)
+                </>
+              ) : (
+                "No ratings yet"
+              )}
+            </p>
+
+            <p>
+              <strong>
+                Number of Reviews:
+              </strong>{" "}
+              {reviews.length}
+            </p>
+          </div>
+        </div>
+
+        {/* TRAILER */}
+        <div className="col-lg-4 col-md-12">
+          {movie.trailerId ? (
+            <div className="movie-trailer-section">
+              <h3 className="text-center mb-3">
+                Trailer
+              </h3>
+
+              <div className="ratio ratio-16x9 trailer-container">
+                <iframe
+                  src={`https://www.youtube.com/embed/${movie.trailerId}`}
+                  title={`${movie.title} Trailer`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          ) : (
+            <div className="alert alert-secondary">
+              Trailer unavailable.
+            </div>
+          )}
         </div>
       </div>
 
-      <hr className="my-5" />
+      <hr />
 
+      {/* REVIEWS */}
       <h2 className="mb-4">
         Reviews
       </h2>
@@ -313,13 +427,15 @@ function MovieDetails({ currentUser }) {
         </div>
       )}
 
-      {reviews.length === 0 &&
-        !reviewMessage && (
-          <p>No reviews yet.</p>
-        )}
+      {reviews.length === 0 && (
+        <div className="alert alert-secondary">
+          No reviews yet. Be the first to
+          review this movie.
+        </div>
+      )}
 
       {reviews.map((review) => {
-        const isOwnReview =
+        const isCurrentUser =
           currentUser &&
           String(review.userId) ===
             String(currentUser.id);
@@ -330,11 +446,6 @@ function MovieDetails({ currentUser }) {
             key={review._id}
           >
             <div className="card-body">
-              <h5 className="card-title">
-                {review.userName ||
-                  "Unknown User"}
-              </h5>
-
               {editingReviewId ===
               review._id ? (
                 <form
@@ -350,35 +461,14 @@ function MovieDetails({ currentUser }) {
                       Rating
                     </label>
 
-                    <select
-                      className="form-select"
-                      value={editRating}
-                      onChange={(event) =>
-                        setEditRating(
-                          event.target.value
-                        )
+                    <StarSelector
+                      selectedRating={
+                        editRating
                       }
-                    >
-                      <option value="5">
-                        5 - Excellent
-                      </option>
-
-                      <option value="4">
-                        4 - Very Good
-                      </option>
-
-                      <option value="3">
-                        3 - Good
-                      </option>
-
-                      <option value="2">
-                        2 - Fair
-                      </option>
-
-                      <option value="1">
-                        1 - Poor
-                      </option>
-                    </select>
+                      setSelectedRating={
+                        setEditRating
+                      }
+                    />
                   </div>
 
                   <div className="mb-3">
@@ -403,7 +493,7 @@ function MovieDetails({ currentUser }) {
 
                   <button
                     type="submit"
-                    className="btn btn-success me-2"
+                    className="btn btn-primary me-2"
                   >
                     Save Changes
                   </button>
@@ -420,26 +510,38 @@ function MovieDetails({ currentUser }) {
                 </form>
               ) : (
                 <>
+                  <h5 className="card-title">
+                    {review.userName ||
+                      "Unknown User"}
+                  </h5>
+
                   <p className="mb-2">
                     <strong>
                       Rating:
                     </strong>{" "}
-                    {review.rating}/5
+                    <span className="star-rating">
+                      {displayStars(
+                        review.rating
+                      )}
+                    </span>
                   </p>
 
                   <p className="card-text">
                     {review.review}
                   </p>
 
-                  <small className="text-muted d-block mb-3">
-                    Reviewed:{" "}
-                    {review.reviewDate}
-                  </small>
+                  {review.reviewDate && (
+                    <p className="text-muted mb-2">
+                      {
+                        review.reviewDate
+                      }
+                    </p>
+                  )}
 
-                  {isOwnReview && (
-                    <>
+                  {isCurrentUser && (
+                    <div>
                       <button
-                        className="btn btn-outline-primary me-2"
+                        className="btn btn-outline-primary btn-sm me-2"
                         onClick={() =>
                           startEditing(
                             review
@@ -450,7 +552,7 @@ function MovieDetails({ currentUser }) {
                       </button>
 
                       <button
-                        className="btn btn-outline-danger"
+                        className="btn btn-outline-danger btn-sm"
                         onClick={() =>
                           handleDelete(
                             review._id
@@ -459,7 +561,7 @@ function MovieDetails({ currentUser }) {
                       >
                         Delete
                       </button>
-                    </>
+                    </div>
                   )}
                 </>
               )}
@@ -470,111 +572,65 @@ function MovieDetails({ currentUser }) {
 
       <hr className="my-5" />
 
-      {currentUser ? (
-        currentUserReview ? (
-          <>
-            <h2 className="mb-4">
-              Your Review
-            </h2>
+      {/* WRITE REVIEW */}
+      <h2 className="mb-4">
+        Write a Review
+      </h2>
 
-            <div className="alert alert-success">
-              You have already reviewed
-              this movie. Use the Edit
-              button on your review above
-              if you want to make changes.
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="mb-4">
-              Write a Review
-            </h2>
-
-            {submitMessage && (
-              <div className="alert alert-info">
-                {submitMessage}
-              </div>
-            )}
-
-            <form
-              onSubmit={
-                handleReviewSubmit
-              }
-            >
-              <div className="mb-3">
-                <label className="form-label">
-                  Rating
-                </label>
-
-                <select
-                  className="form-select"
-                  value={rating}
-                  onChange={(event) =>
-                    setRating(
-                      event.target.value
-                    )
-                  }
-                >
-                  <option value="5">
-                    5 - Excellent
-                  </option>
-
-                  <option value="4">
-                    4 - Very Good
-                  </option>
-
-                  <option value="3">
-                    3 - Good
-                  </option>
-
-                  <option value="2">
-                    2 - Fair
-                  </option>
-
-                  <option value="1">
-                    1 - Poor
-                  </option>
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">
-                  Review
-                </label>
-
-                <textarea
-                  className="form-control"
-                  rows="5"
-                  value={reviewText}
-                  onChange={(event) =>
-                    setReviewText(
-                      event.target.value
-                    )
-                  }
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
-                Submit Review
-              </button>
-            </form>
-          </>
-        )
+      {!currentUser ? (
+        <div className="alert alert-warning">
+          You must be logged in to write a
+          review.
+        </div>
+      ) : currentUserReview ? (
+        <div className="alert alert-info">
+          You have already reviewed this
+          movie. You can edit your existing
+          review above.
+        </div>
       ) : (
-        <>
-          <h2 className="mb-4">
-            Write a Review
-          </h2>
+        <form
+          onSubmit={handleReviewSubmit}
+          className="mb-5"
+        >
+          <div className="mb-3">
+            <label className="form-label">
+              Rating
+            </label>
 
-          <div className="alert alert-warning">
-            You must be logged in to
-            write a review.
+            <StarSelector
+              selectedRating={rating}
+              setSelectedRating={
+                setRating
+              }
+            />
           </div>
-        </>
+
+          <div className="mb-3">
+            <label className="form-label">
+              Review
+            </label>
+
+            <textarea
+              className="form-control"
+              rows="5"
+              value={reviewText}
+              onChange={(event) =>
+                setReviewText(
+                  event.target.value
+                )
+              }
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+          >
+            Submit Review
+          </button>
+        </form>
       )}
     </div>
   );

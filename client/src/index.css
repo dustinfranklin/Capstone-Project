@@ -1,34 +1,541 @@
+@import url("https://fonts.googleapis.com/css2?family=Homemade+Apple&family=Limelight&family=Lato:wght@400;700;900&display=swap");
+
+:root {
+  --transition-speed: 0.3s;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  min-height: 100vh;
+  font-family: "Lato", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
+  transition:
+    background-color var(--transition-speed),
+    color var(--transition-speed);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family:
+    source-code-pro,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Courier New",
     monospace;
 }
 
+/* =========================
+   LIGHT MODE
+========================= */
+
+body[data-theme="light"] {
+  color: #2b2b2b;
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.72)
+    ),
+    url("./images/light-background.jpg")
+      center center / cover fixed no-repeat;
+}
+
+body[data-theme="light"] .site-navbar {
+  background-color: rgba(210, 0, 20, 0.96);
+  border-bottom: 3px solid #ffd43b;
+}
+
+body[data-theme="light"] .site-brand {
+  color: #fff8dc;
+}
+
+body[data-theme="light"] .nav-link,
+body[data-theme="light"] .navbar-text {
+  color: #ffffff;
+}
+
+body[data-theme="light"] .nav-link:hover {
+  color: #ffd43b;
+}
+
+body[data-theme="light"] .card {
+  background-color: rgba(255, 255, 255, 0.94);
+  color: #2b2b2b;
+  border: 2px solid #ffd43b;
+}
+
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4,
+body[data-theme="light"] h5 {
+  color: #c80018;
+}
+
+body[data-theme="light"] .btn-theme {
+  background-color: #ffd43b;
+  color: #7a0010;
+  border: none;
+}
+
+body[data-theme="light"] .btn-theme:hover {
+  background-color: #ffdf66;
+  color: #7a0010;
+}
+
+body[data-theme="light"] .btn-logout {
+  background-color: transparent;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+}
+
+body[data-theme="light"] .btn-logout:hover {
+  background-color: #ffffff;
+  color: #c80018;
+}
+
+body[data-theme="light"] .btn-primary {
+  background-color: #d1001f;
+  border-color: #d1001f;
+}
+
+body[data-theme="light"] .btn-primary:hover {
+  background-color: #a80018;
+  border-color: #a80018;
+}
+
+body[data-theme="light"] .form-control,
+body[data-theme="light"] .form-select {
+  background-color: rgba(255, 255, 255, 0.96);
+  color: #2b2b2b;
+  border: 1px solid #d6b300;
+}
+
+body[data-theme="light"] .text-muted {
+  color: #6c5a2b !important;
+}
+
+body[data-theme="light"] hr {
+  border-color: rgba(200, 0, 24, 0.4);
+}
+
+/* =========================
+   DARK MODE
+========================= */
+
+body[data-theme="dark"] {
+  color: #f3ede6;
+  background:
+    linear-gradient(
+      rgba(8, 8, 8, 0.66),
+      rgba(8, 8, 8, 0.66)
+    ),
+    url("./images/dark-background.jpg")
+      center center / cover fixed no-repeat;
+}
+
+body[data-theme="dark"] .site-navbar {
+  background-color: rgba(20, 8, 10, 0.96);
+  border-bottom: 3px solid #8b1e2d;
+}
+
+body[data-theme="dark"] .site-brand {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"] .nav-link,
+body[data-theme="dark"] .navbar-text {
+  color: #f3ede6;
+}
+
+body[data-theme="dark"] .nav-link:hover {
+  color: #c99b6b;
+}
+
+body[data-theme="dark"] .card {
+  background-color: rgba(31, 22, 24, 0.94);
+  color: #f3ede6;
+  border: 1px solid #6f2632;
+}
+
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5 {
+  color: #f0d8b5;
+}
+
+body[data-theme="dark"] .btn-theme {
+  background-color: #8b1e2d;
+  color: #ffffff;
+  border: none;
+}
+
+body[data-theme="dark"] .btn-theme:hover {
+  background-color: #a72b3d;
+}
+
+body[data-theme="dark"] .btn-logout {
+  background-color: transparent;
+  color: #f3ede6;
+  border: 1px solid #f3ede6;
+}
+
+body[data-theme="dark"] .btn-logout:hover {
+  background-color: #f3ede6;
+  color: #2a1015;
+}
+
+body[data-theme="dark"] .btn-primary {
+  background-color: #7b1e2c;
+  border-color: #7b1e2c;
+}
+
+body[data-theme="dark"] .btn-primary:hover {
+  background-color: #9a2a3b;
+  border-color: #9a2a3b;
+}
+
+body[data-theme="dark"] .form-control,
+body[data-theme="dark"] .form-select {
+  background-color: rgba(35, 27, 28, 0.96);
+  color: #f3ede6;
+  border: 1px solid #6f2632;
+}
+
+body[data-theme="dark"] .form-control::placeholder {
+  color: #b9aaa6;
+}
+
+body[data-theme="dark"] .text-muted {
+  color: #c5b7b2 !important;
+}
+
+body[data-theme="dark"] hr {
+  border-color: rgba(139, 30, 45, 0.55);
+}
+
+/* =========================
+   SHARED STYLES
+========================= */
+
+.site-navbar {
+  transition:
+    background-color var(--transition-speed),
+    border-color var(--transition-speed);
+}
+
+.site-brand {
+  font-family: "Homemade Apple", cursive;
+  font-size: 1.45rem;
+  text-decoration: none;
+  margin-right: 2rem;
+}
+
+.nav-link,
+.navbar-text {
+  transition: color var(--transition-speed);
+}
+
 .card {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border: none;
-    transition: transform 0.2s;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    transform 0.2s,
+    background-color var(--transition-speed),
+    color var(--transition-speed),
+    border-color var(--transition-speed);
 }
 
 .card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
 h1,
 h2 {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
+  font-weight: 700;
 }
 
 .movie-poster {
   height: 420px;
   object-fit: cover;
+}
+
+.btn-theme,
+.btn-logout,
+.btn-primary {
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+/* Gold/yellow star styling */
+.star-rating {
+  color: #f4c542;
+}
+
+/* Keep page content readable over wallpapers */
+.container.mt-4 {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+/* =========================
+   MOVIE THEME TOGGLE
+========================= */
+
+.movie-theme-toggle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.theme-toggle-track {
+  position: relative;
+  display: block;
+  width: 76px;
+  height: 38px;
+  border-radius: 30px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.theme-toggle-icon {
+  position: absolute;
+  top: 2px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    left 0.35s ease,
+    background-color 0.3s ease;
+}
+
+.theme-toggle-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+/* LIGHT MODE TOGGLE */
+
+.movie-theme-toggle.light
+.theme-toggle-track {
+  background-color: #fff4c2;
+  border: 2px solid #ffd43b;
+  box-shadow:
+    0 0 8px rgba(255, 212, 59, 0.5);
+}
+
+.movie-theme-toggle.light
+.theme-toggle-icon {
+  left: 2px;
+  background-color: #ffffff;
+}
+
+/* DARK MODE TOGGLE */
+
+.movie-theme-toggle.dark
+.theme-toggle-track {
+  background-color: #160b0d;
+  border: 2px solid #8b1e2d;
+  box-shadow:
+    0 0 8px rgba(139, 30, 45, 0.6);
+}
+
+.movie-theme-toggle.dark
+.theme-toggle-icon {
+  left: 38px;
+  background-color: #2a1015;
+}
+
+/* HOVER */
+
+.movie-theme-toggle:hover
+.theme-toggle-track {
+  transform: scale(1.04);
+}
+
+/* KEYBOARD ACCESSIBILITY */
+
+.movie-theme-toggle:focus-visible
+.theme-toggle-track {
+  outline: 3px solid #f4c542;
+  outline-offset: 3px;
+}
+
+/* Cinematic page headings */
+
+.cinematic-heading {
+  font-family: "Limelight", sans-serif;
+  letter-spacing: 2px;
+}
+
+.movie-rating-label {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* =========================
+   MOVIE DETAILS PAGE
+========================= */
+
+.movie-details-title {
+  margin-bottom: 12px;
+}
+
+.movie-synopsis {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  text-align: center;
+  margin: 20px 0 25px;
+}
+
+.movie-details-info {
+  margin-top: 20px;
+}
+
+.movie-details-info p {
+  margin-bottom: 10px;
+}
+
+.movie-details-poster {
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+}
+
+.movie-trailer-section h3 {
+  font-weight: 700;
+}
+
+.trailer-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
+}
+
+.trailer-container iframe {
+  border: 0;
+}
+
+.star-rating {
+  color: #f4c542;
+}
+
+/* =========================
+   ABOUT PAGE
+========================= */
+
+.about-page {
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+.about-card p {
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.about-card h2 {
+  margin-bottom: 20px;
+}
+
+body[data-theme="light"] .about-card {
+  background-color: rgba(255, 255, 255, 0.94);
+}
+
+body[data-theme="dark"] .about-card {
+  background-color: rgba(31, 22, 24, 0.94);
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+.site-footer {
+  width: 100%;
+  margin-top: 50px;
+  padding: 18px 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+}
+
+.footer-copyright {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.footer-foot-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* LIGHT MODE FOOTER */
+
+body[data-theme="light"] .site-footer {
+  background-color: rgba(210, 0, 20, 0.96);
+  color: #ffffff;
+  border-top: 3px solid #ffd43b;
+}
+
+/* DARK MODE FOOTER */
+
+body[data-theme="dark"] .site-footer {
+  background-color: rgba(20, 8, 10, 0.96);
+  color: #f3ede6;
+  border-top: 3px solid #8b1e2d;
+}
+
+/* About page movie links */
+
+.about-movie-link {
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+
+body[data-theme="light"] .about-movie-link {
+  color: #c80018;
+}
+
+body[data-theme="light"] .about-movie-link:hover {
+  color: #8f0011;
+  text-decoration: underline;
+}
+
+body[data-theme="dark"] .about-movie-link {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"] .about-movie-link:hover {
+  color: #f4d8ac;
+  text-decoration: underline;
 }
