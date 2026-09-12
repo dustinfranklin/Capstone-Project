@@ -2,41 +2,219 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import { MongoClient, ObjectId } from "mongodb";
+import {
+  MongoClient,
+  ObjectId,
+} from "mongodb";
 
 dotenv.config();
 
-const server = express();
+const app = express();
 const PORT = 4000;
 
-server.use(cors());
-server.use(express.json());
+app.use(cors());
+app.use(express.json());
 
-const client = new MongoClient(process.env.MONGODB_URI);
+const client = new MongoClient(
+  process.env.MONGODB_URI
+);
 
 let db;
 
-// Connect to MongoDB
-async function connectToDatabase() {
-  try {
-    await client.connect();
+// =========================
+// BASIC TEST ROUTE
+// =========================
 
-    db = client.db(process.env.DB_NAME);
-
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    throw error;
-  }
-}
-
-// Test route
-server.get("/", (req, res) => {
-  res.send("The server is running");
+app.get("/", (req, res) => {
+  res.send("Server is running");
 });
 
-// Get all movies with average ratings
-server.get("/api/movies", async (req, res) => {
+// =========================
+// SEARCH MOVIES BY ACTOR
+// =========================
+
+app.get(
+  "/api/movies/search-by-actor",
+  async (req, res) => {
+    try {
+      const actorName =
+        req.query.name?.trim();
+
+      if (!actorName) {
+        return res.status(400).json({
+          message:
+            "Please enter an actor name.",
+        });
+      }
+
+      // Search TMDB for the actor
+      const personResponse = await fetch(
+        `https://api.themoviedb.org/3/search/person?api_key=${
+          process.env.TMDB_API_KEY
+        }&query=${encodeURIComponent(
+          actorName
+        )}`
+      );
+
+      const personData =
+        await personResponse.json();
+
+      if (!personResponse.ok) {
+        return res
+          .status(personResponse.status)
+          .json({
+            message:
+              "Could not search TMDB.",
+            error: personData,
+          });
+      }
+
+      if (
+        !personData.results ||
+        personData.results.length === 0
+      ) {
+        return res.json({
+          actor: actorName,
+          movies: [],
+          message:
+            "Sorry! They're not in these movies!",
+        });
+      }
+
+      // Prefer exact name match
+      const exactMatch =
+        personData.results.find(
+          (person) =>
+            person.name
+              ?.trim()
+              .toLowerCase() ===
+            actorName
+              .trim()
+              .toLowerCase()
+        );
+
+      const actor =
+        exactMatch ||
+        personData.results[0];
+
+      // Get the actor's movie credits
+      const creditsResponse =
+        await fetch(
+          `https://api.themoviedb.org/3/person/${actor.id}/movie_credits?api_key=${process.env.TMDB_API_KEY}`
+        );
+
+      const creditsData =
+        await creditsResponse.json();
+
+      if (!creditsResponse.ok) {
+        return res
+          .status(
+            creditsResponse.status
+          )
+          .json({
+            message:
+              "Could not get actor movie credits.",
+            error: creditsData,
+          });
+      }
+
+      // Create a list of TMDB movie IDs
+      // the actor appeared in
+      const actorMovieIds =
+        new Set(
+          (creditsData.cast || []).map(
+            (credit) => credit.id
+          )
+        );
+
+      // Get our movies, including ratings
+      const ourMovies = await db
+        .collection("movies")
+        .aggregate([
+          {
+            $lookup: {
+              from: "reviews",
+              localField: "_id",
+              foreignField: "movieId",
+              as: "reviews",
+            },
+          },
+          {
+            $addFields: {
+              averageRating: {
+                $cond: [
+                  {
+                    $gt: [
+                      {
+                        $size:
+                          "$reviews",
+                      },
+                      0,
+                    ],
+                  },
+                  {
+                    $avg:
+                      "$reviews.rating",
+                  },
+                  0,
+                ],
+              },
+              reviewCount: {
+                $size: "$reviews",
+              },
+            },
+          },
+          {
+            $project: {
+              reviews: 0,
+            },
+          },
+        ])
+        .toArray();
+
+      // Compare TMDB IDs directly
+      const matchingMovies =
+        ourMovies.filter(
+          (movie) =>
+            movie.tmdbId &&
+            actorMovieIds.has(
+              Number(movie.tmdbId)
+            )
+        );
+
+      if (
+        matchingMovies.length === 0
+      ) {
+        return res.json({
+          actor: actor.name,
+          movies: [],
+          message:
+            "Sorry! They're not in these movies!",
+        });
+      }
+
+      res.json({
+        actor: actor.name,
+        movies: matchingMovies,
+      });
+    } catch (error) {
+      console.error(
+        "Actor search error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not search movies by actor.",
+      });
+    }
+  }
+);
+// =========================
+// GET ALL MOVIES
+// =========================
+
+app.get("/api/movies", async (req, res) => {
   try {
     const movies = await db
       .collection("movies")
@@ -56,18 +234,19 @@ server.get("/api/movies", async (req, res) => {
                 {
                   $gt: [
                     {
-                      $size: "$reviews",
+                      $size:
+                        "$reviews",
                     },
                     0,
                   ],
                 },
                 {
-                  $avg: "$reviews.rating",
+                  $avg:
+                    "$reviews.rating",
                 },
-                null,
+                0,
               ],
             },
-
             reviewCount: {
               $size: "$reviews",
             },
@@ -83,57 +262,79 @@ server.get("/api/movies", async (req, res) => {
 
     res.json(movies);
   } catch (error) {
-    console.error("Movies error:", error);
+    console.error(
+      "Get movies error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Could not retrieve movies",
+      message:
+        "Could not get movies.",
     });
   }
 });
 
-// Get one movie by ID
-server.get("/api/movies/:id", async (req, res) => {
-  try {
-    const movieId = req.params.id;
+// =========================
+// GET ONE MOVIE
+// =========================
 
-    if (!ObjectId.isValid(movieId)) {
-      return res.status(400).json({
-        message: "Invalid movie ID",
+app.get(
+  "/api/movies/:id",
+  async (req, res) => {
+    try {
+      if (
+        !ObjectId.isValid(req.params.id)
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid movie ID.",
+        });
+      }
+
+      const movie = await db
+        .collection("movies")
+        .findOne({
+          _id: new ObjectId(
+            req.params.id
+          ),
+        });
+
+      if (!movie) {
+        return res.status(404).json({
+          message:
+            "Movie not found.",
+        });
+      }
+
+      res.json(movie);
+    } catch (error) {
+      console.error(
+        "Get movie error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not get movie.",
       });
     }
-
-    const movie = await db
-      .collection("movies")
-      .findOne({
-        _id: new ObjectId(movieId),
-      });
-
-    if (!movie) {
-      return res.status(404).json({
-        message: "Movie not found",
-      });
-    }
-
-    res.json(movie);
-  } catch (error) {
-    console.error("Movie details error:", error);
-
-    res.status(500).json({
-      message: "Could not retrieve movie",
-    });
   }
-});
+);
 
-// Get reviews for one movie
-server.get(
+// =========================
+// GET REVIEWS FOR A MOVIE
+// =========================
+
+app.get(
   "/api/movies/:id/reviews",
   async (req, res) => {
     try {
-      const movieId = req.params.id;
-
-      if (!ObjectId.isValid(movieId)) {
+      if (
+        !ObjectId.isValid(req.params.id)
+      ) {
         return res.status(400).json({
-          message: "Invalid movie ID",
+          message:
+            "Invalid movie ID.",
         });
       }
 
@@ -142,30 +343,43 @@ server.get(
         .aggregate([
           {
             $match: {
-              movieId: new ObjectId(movieId),
+              movieId:
+                new ObjectId(
+                  req.params.id
+                ),
             },
           },
           {
             $lookup: {
               from: "users",
-              localField: "userId",
-              foreignField: "_id",
+              localField:
+                "userId",
+              foreignField:
+                "_id",
               as: "user",
             },
           },
           {
             $unwind: {
               path: "$user",
-              preserveNullAndEmptyArrays: true,
+              preserveNullAndEmptyArrays:
+                true,
             },
           },
           {
             $project: {
+              userId: 1,
+              movieId: 1,
               rating: 1,
               review: 1,
               reviewDate: 1,
-              userId: 1,
-              userName: "$user.username",
+              userName:
+                "$user.username",
+            },
+          },
+          {
+            $sort: {
+              reviewDate: -1,
             },
           },
         ])
@@ -173,22 +387,27 @@ server.get(
 
       res.json(reviews);
     } catch (error) {
-      console.error("Reviews error:", error);
+      console.error(
+        "Get reviews error:",
+        error
+      );
 
       res.status(500).json({
-        message: "Could not retrieve reviews",
+        message:
+          "Could not get reviews.",
       });
     }
   }
 );
 
-// Submit a new review
-server.post(
+// =========================
+// CREATE REVIEW
+// =========================
+
+app.post(
   "/api/movies/:id/reviews",
   async (req, res) => {
     try {
-      const movieId = req.params.id;
-
       const {
         userId,
         rating,
@@ -196,60 +415,61 @@ server.post(
       } = req.body;
 
       if (
-        !userId ||
-        !rating ||
-        !review
-      ) {
-        return res.status(400).json({
-          message:
-            "User, rating, and review are required",
-        });
-      }
-
-      if (
-        !ObjectId.isValid(movieId) ||
+        !ObjectId.isValid(
+          req.params.id
+        ) ||
         !ObjectId.isValid(userId)
       ) {
         return res.status(400).json({
-          message: "Invalid ID",
+          message:
+            "Invalid movie or user ID.",
         });
       }
 
-      const numericRating = Number(rating);
+      const numericRating =
+        Number(rating);
 
       if (
-        !Number.isInteger(numericRating) ||
+        !numericRating ||
         numericRating < 1 ||
         numericRating > 5
       ) {
         return res.status(400).json({
           message:
-            "Rating must be between 1 and 5",
+            "Rating must be between 1 and 5.",
         });
       }
 
-      const existingReview = await db
-        .collection("reviews")
-        .findOne({
-          userId: new ObjectId(userId),
-          movieId: new ObjectId(movieId),
-        });
+      const movieId =
+        new ObjectId(
+          req.params.id
+        );
+
+      const userObjectId =
+        new ObjectId(userId);
+
+      const existingReview =
+        await db
+          .collection("reviews")
+          .findOne({
+            movieId,
+            userId: userObjectId,
+          });
 
       if (existingReview) {
-        return res.status(409).json({
+        return res.status(400).json({
           message:
-            "You have already reviewed this movie. Edit your existing review instead.",
+            "You have already reviewed this movie.",
         });
       }
 
       const newReview = {
-        userId: new ObjectId(userId),
-        movieId: new ObjectId(movieId),
+        userId: userObjectId,
+        movieId,
         rating: numericRating,
-        review,
-        reviewDate: new Date()
-          .toISOString()
-          .split("T")[0],
+        review:
+          review?.trim() || "",
+        reviewDate: new Date(),
       };
 
       const result = await db
@@ -258,30 +478,34 @@ server.post(
 
       res.status(201).json({
         message:
-          "Review submitted successfully",
-        reviewId: result.insertedId,
+          "Review added successfully.",
+        review: {
+          _id: result.insertedId,
+          ...newReview,
+        },
       });
     } catch (error) {
       console.error(
-        "Submit review error:",
+        "Create review error:",
         error
       );
 
       res.status(500).json({
         message:
-          "Could not submit review",
+          "Could not create review.",
       });
     }
   }
 );
 
-// Update a review
-server.put(
+// =========================
+// UPDATE REVIEW
+// =========================
+
+app.put(
   "/api/reviews/:id",
   async (req, res) => {
     try {
-      const reviewId = req.params.id;
-
       const {
         userId,
         rating,
@@ -289,77 +513,65 @@ server.put(
       } = req.body;
 
       if (
-        !userId ||
-        !rating ||
-        !review
-      ) {
-        return res.status(400).json({
-          message:
-            "User, rating, and review are required",
-        });
-      }
-
-      if (
-        !ObjectId.isValid(reviewId) ||
+        !ObjectId.isValid(
+          req.params.id
+        ) ||
         !ObjectId.isValid(userId)
       ) {
         return res.status(400).json({
-          message: "Invalid ID",
+          message:
+            "Invalid review or user ID.",
         });
       }
 
-      const numericRating = Number(rating);
+      const numericRating =
+        Number(rating);
 
       if (
-        !Number.isInteger(numericRating) ||
+        !numericRating ||
         numericRating < 1 ||
         numericRating > 5
       ) {
         return res.status(400).json({
           message:
-            "Rating must be between 1 and 5",
+            "Rating must be between 1 and 5.",
         });
       }
 
-      const existingReview = await db
-        .collection("reviews")
-        .findOne({
-          _id: new ObjectId(reviewId),
-        });
-
-      if (!existingReview) {
-        return res.status(404).json({
-          message: "Review not found",
-        });
-      }
-
-      if (
-        existingReview.userId.toString() !==
-        userId
-      ) {
-        return res.status(403).json({
-          message:
-            "You can only edit your own reviews",
-        });
-      }
-
-      await db
+      const result = await db
         .collection("reviews")
         .updateOne(
           {
-            _id: new ObjectId(reviewId),
+            _id: new ObjectId(
+              req.params.id
+            ),
+            userId: new ObjectId(
+              userId
+            ),
           },
           {
             $set: {
-              rating: numericRating,
-              review,
+              rating:
+                numericRating,
+              review:
+                review?.trim() ||
+                "",
             },
           }
         );
 
+      if (
+        result.matchedCount === 0
+      ) {
+        return res.status(403).json({
+          message:
+            "You cannot edit this review.",
+        });
+      }
+
       res.json({
         message:
-          "Review updated successfully",
+          "Review updated successfully.",
       });
     } catch (error) {
       console.error(
@@ -369,67 +581,58 @@ server.put(
 
       res.status(500).json({
         message:
-          "Could not update review",
+          "Could not update review.",
       });
     }
   }
 );
 
-// Delete a review
-server.delete(
+// =========================
+// DELETE REVIEW
+// =========================
+
+app.delete(
   "/api/reviews/:id",
   async (req, res) => {
     try {
-      const reviewId = req.params.id;
-
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({
-          message: "User is required",
-        });
-      }
+      const { userId } =
+        req.body;
 
       if (
-        !ObjectId.isValid(reviewId) ||
+        !ObjectId.isValid(
+          req.params.id
+        ) ||
         !ObjectId.isValid(userId)
       ) {
         return res.status(400).json({
-          message: "Invalid ID",
+          message:
+            "Invalid review or user ID.",
         });
       }
 
-      const existingReview = await db
+      const result = await db
         .collection("reviews")
-        .findOne({
-          _id: new ObjectId(reviewId),
+        .deleteOne({
+          _id: new ObjectId(
+            req.params.id
+          ),
+          userId: new ObjectId(
+            userId
+          ),
         });
-
-      if (!existingReview) {
-        return res.status(404).json({
-          message: "Review not found",
-        });
-      }
 
       if (
-        existingReview.userId.toString() !==
-        userId
+        result.deletedCount === 0
       ) {
         return res.status(403).json({
           message:
-            "You can only delete your own reviews",
+            "You cannot delete this review.",
         });
       }
 
-      await db
-        .collection("reviews")
-        .deleteOne({
-          _id: new ObjectId(reviewId),
-        });
-
       res.json({
         message:
-          "Review deleted successfully",
+          "Review deleted successfully.",
       });
     } catch (error) {
       console.error(
@@ -439,14 +642,17 @@ server.delete(
 
       res.status(500).json({
         message:
-          "Could not delete review",
+          "Could not delete review.",
       });
     }
   }
 );
 
-// Register a new user
-server.post(
+// =========================
+// REGISTER
+// =========================
+
+app.post(
   "/api/register",
   async (req, res) => {
     try {
@@ -467,34 +673,34 @@ server.post(
       ) {
         return res.status(400).json({
           message:
-            "First name, last name, username, email, and password are required",
+            "Please complete all fields.",
         });
       }
 
-      const usersCollection =
+      const users =
         db.collection("users");
 
       const existingEmail =
-        await usersCollection.findOne({
+        await users.findOne({
           email,
         });
 
       if (existingEmail) {
-        return res.status(409).json({
+        return res.status(400).json({
           message:
-            "A user with that email already exists",
+            "An account with that email already exists.",
         });
       }
 
       const existingUsername =
-        await usersCollection.findOne({
+        await users.findOne({
           username,
         });
 
       if (existingUsername) {
-        return res.status(409).json({
+        return res.status(400).json({
           message:
-            "That username is already taken",
+            "That username is already taken.",
         });
       }
 
@@ -509,36 +715,40 @@ server.post(
         lastName,
         username,
         email,
-        password: hashedPassword,
-        createdAt: new Date(),
+        password:
+          hashedPassword,
       };
 
       const result =
-        await usersCollection.insertOne(
+        await users.insertOne(
           newUser
         );
 
       res.status(201).json({
         message:
-          "Registration successful",
-        userId: result.insertedId,
+          "Registration successful.",
+        userId:
+          result.insertedId,
       });
     } catch (error) {
       console.error(
-        "Registration error:",
+        "Register error:",
         error
       );
 
       res.status(500).json({
         message:
-          "Could not register user",
+          "Could not register user.",
       });
     }
   }
 );
 
-// Log in a user
-server.post(
+// =========================
+// LOGIN
+// =========================
+
+app.post(
   "/api/login",
   async (req, res) => {
     try {
@@ -547,25 +757,26 @@ server.post(
         password,
       } = req.body;
 
-      if (!email || !password) {
+      if (
+        !email ||
+        !password
+      ) {
         return res.status(400).json({
           message:
-            "Email and password are required",
+            "Please enter your email and password.",
         });
       }
 
-      const usersCollection =
-        db.collection("users");
-
-      const user =
-        await usersCollection.findOne({
+      const user = await db
+        .collection("users")
+        .findOne({
           email,
         });
 
       if (!user) {
         return res.status(401).json({
           message:
-            "Invalid email or password",
+            "Invalid email or password.",
         });
       }
 
@@ -578,17 +789,21 @@ server.post(
       if (!passwordMatches) {
         return res.status(401).json({
           message:
-            "Invalid email or password",
+            "Invalid email or password.",
         });
       }
 
-      res.status(200).json({
-        message: "Login successful",
+      res.json({
+        message:
+          "Login successful.",
         user: {
           id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
+          firstName:
+            user.firstName,
+          lastName:
+            user.lastName,
+          username:
+            user.username,
           email: user.email,
         },
       });
@@ -600,24 +815,39 @@ server.post(
 
       res.status(500).json({
         message:
-          "Could not log in",
+          "Could not log in.",
       });
     }
   }
 );
 
-// Connect to MongoDB, then start server
-connectToDatabase()
-  .then(() => {
-    server.listen(PORT, () => {
+// =========================
+// CONNECT TO MONGODB
+// =========================
+
+async function startServer() {
+  try {
+    await client.connect();
+
+    db = client.db(
+      process.env.DB_NAME
+    );
+
+    console.log(
+      `Connected to MongoDB database: ${process.env.DB_NAME}`
+    );
+
+    app.listen(PORT, () => {
       console.log(
-        `The server is running on port ${PORT}`
+        `Server running on http://localhost:${PORT}`
       );
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error(
-      "Server could not start because MongoDB connection failed:",
+      "MongoDB connection error:",
       error
     );
-  });
+  }
+}
+
+startServer();

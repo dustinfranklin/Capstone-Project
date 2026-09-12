@@ -539,3 +539,121 @@ body[data-theme="dark"] .about-movie-link:hover {
   color: #f4d8ac;
   text-decoration: underline;
 }
+
+/* =========================
+   RESPONSIVE NAVBAR
+========================= */
+
+.navbar-nav {
+  gap: 2px;
+}
+
+
+.nav-welcome {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.theme-toggle-nav-item {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+/* Hamburger button */
+.navbar-toggler {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(244, 197, 66, 0.35);
+}
+
+/* Small screens */
+@media (max-width: 767.98px) {
+  .navbar-collapse {
+    padding-top: 15px;
+    padding-bottom: 10px;
+  }
+
+  .navbar-nav {
+    align-items: flex-start !important;
+    gap: 4px;
+  }
+
+  .nav-welcome {
+    padding-left: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .btn-logout {
+    margin-top: 4px;
+  }
+
+  .theme-toggle-nav-item {
+    margin-left: 0;
+    margin-top: 14px;
+  }
+}
+
+/* =========================
+   NAVBAR TEXT REFINEMENTS
+========================= */
+
+/* Slightly smaller desktop nav items */
+.site-navbar .navbar-nav .nav-link,
+.site-navbar .navbar-nav .navbar-text,
+.site-navbar .navbar-nav .btn-logout {
+  font-size: 0.88rem;
+}
+
+/* Never allow Welcome, username! to wrap */
+.site-navbar .navbar-nav .nav-welcome {
+  white-space: nowrap !important;
+  width: auto;
+  min-width: max-content;
+}
+
+/* Logout should look exactly like a nav link */
+.site-navbar .navbar-nav .btn-logout {
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 8px;
+  font-weight: 400;
+}
+
+/* Light mode */
+body[data-theme="light"]
+  .site-navbar
+  .navbar-nav
+  .btn-logout {
+  color: #ffffff;
+}
+
+body[data-theme="light"]
+  .site-navbar
+  .navbar-nav
+  .btn-logout:hover {
+  background: none !important;
+  color: #ffd43b;
+}
+
+/* Dark mode */
+body[data-theme="dark"]
+  .site-navbar
+  .navbar-nav
+  .btn-logout {
+  color: #f3ede6;
+}
+
+body[data-theme="dark"]
+  .site-navbar
+  .navbar-nav
+  .btn-logout:hover {
+  background: none !important;
+  color: #c99b6b;
+}
