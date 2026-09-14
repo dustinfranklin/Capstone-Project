@@ -7,7 +7,11 @@ import {
   Link,
 } from "react-router-dom";
 
-import MovieLoader from "../components/MovieLoader";
+import MovieLoader
+  from "../components/MovieLoader";
+
+import DirectorQuote
+  from "../components/DirectorQuote";
 
 function Watchlist({
   currentUser,
@@ -47,9 +51,7 @@ function Watchlist({
           await response.json();
 
         if (response.ok) {
-          setMovies(
-            data
-          );
+          setMovies(data);
         } else {
           setError(
             data.message ||
@@ -66,29 +68,42 @@ function Watchlist({
           "Could not connect to the server."
         );
       } finally {
-        setLoading(
-          false
-        );
+        setLoading(false);
       }
     }
 
     getWatchlist();
   }, [currentUser]);
 
+  // =========================
+  // NOT LOGGED IN
+  // =========================
+
   if (!currentUser) {
     return (
-      <div>
-        <h1 className="text-center mb-4 cinematic-heading">
-          My Watchlist
-        </h1>
+      <div className="watchlist-page">
+        <header className="watchlist-hero text-center">
+          <span className="watchlist-eyebrow">
+            Your Personal Collection
+          </span>
 
-        <div className="alert alert-warning text-center">
-          You must be logged
-          in to view your
-          watchlist.
-        </div>
+          <h1 className="cinematic-heading">
+            My Watchlist
+          </h1>
+        </header>
 
-        <div className="text-center">
+        <div className="watchlist-login-card">
+          <h3>
+            Log In to View Your Watchlist
+          </h3>
+
+          <p>
+            Save movies you want
+            to revisit and keep
+            your personal film
+            lineup in one place.
+          </p>
+
           <Link
             to="/login"
             className="btn btn-primary"
@@ -100,6 +115,10 @@ function Watchlist({
     );
   }
 
+  // =========================
+  // LOADING
+  // =========================
+
   if (loading) {
     return (
       <MovieLoader
@@ -107,6 +126,10 @@ function Watchlist({
       />
     );
   }
+
+  // =========================
+  // ERROR
+  // =========================
 
   if (error) {
     return (
@@ -118,49 +141,68 @@ function Watchlist({
 
   return (
     <div className="watchlist-page">
-      <h1 className="text-center mb-2 cinematic-heading">
-        My Watchlist
-      </h1>
+      {/* =====================
+          HEADER
+      ====================== */}
 
-      <p className="text-center mb-4">
-        Your personal lineup
-        of films to revisit.
-      </p>
+      <header className="watchlist-hero text-center">
+        <span className="watchlist-eyebrow">
+          Your Personal Collection
+        </span>
 
-      {movies.length ===
-      0 ? (
-        <div className="card watchlist-empty-card">
-          <div className="card-body text-center p-5">
-            <h3>
-              Your Watchlist
-              is Empty
-            </h3>
+        <h1 className="cinematic-heading">
+          My Watchlist
+        </h1>
 
-            <p className="mb-4">
-              Add movies from
-              the filmography
-              and they'll show
-              up here.
-            </p>
+        <p className="watchlist-subtitle">
+          Your personal lineup
+          of films to revisit.
+        </p>
 
-            <Link
-              to="/"
-              className="btn btn-primary"
-            >
-              Browse Films
-            </Link>
+        {movies.length > 0 && (
+          <span className="watchlist-count">
+            {movies.length}{" "}
+            {movies.length === 1
+              ? "Film"
+              : "Films"}
+          </span>
+        )}
+      </header>
+
+      {/* =====================
+          EMPTY WATCHLIST
+      ====================== */}
+
+      {movies.length === 0 ? (
+        <section className="watchlist-empty">
+          <div className="watchlist-empty-icon">
+            ★
           </div>
-        </div>
+
+          <h2 className="cinematic-heading">
+            Your Watchlist is Empty
+          </h2>
+
+          <p>
+            Add movies from the
+            filmography and they'll
+            show up here whenever
+            you're ready for your
+            next movie night.
+          </p>
+
+          <Link
+            to="/"
+            className="btn btn-primary"
+          >
+            Browse Films
+          </Link>
+        </section>
       ) : (
         <>
-          <p className="text-center mb-4">
-            {movies.length}{" "}
-            {movies.length ===
-            1
-              ? "film"
-              : "films"}{" "}
-            in your watchlist
-          </p>
+          {/* =====================
+              MOVIES
+          ====================== */}
 
           <div className="row">
             {movies.map(
@@ -176,15 +218,21 @@ function Watchlist({
                     className="text-decoration-none"
                   >
                     <div className="card h-100 watchlist-movie-card">
-                      {movie.poster && (
-                        <img
-                          src={
-                            movie.poster
-                          }
-                          alt={`${movie.title} poster`}
-                          className="card-img-top movie-poster"
-                        />
-                      )}
+                      <div className="watchlist-poster-wrapper">
+                        {movie.poster && (
+                          <img
+                            src={
+                              movie.poster
+                            }
+                            alt={`${movie.title} poster`}
+                            className="card-img-top movie-poster"
+                          />
+                        )}
+
+                        <div className="watchlist-poster-badge">
+                          Watchlist
+                        </div>
+                      </div>
 
                       <div className="card-body text-center">
                         <h5 className="card-title">
@@ -223,8 +271,7 @@ function Watchlist({
 
                         <p className="card-text mb-0">
                           <strong>
-                            Average
-                            Rating:
+                            Average Rating:
                           </strong>{" "}
 
                           {Number(
@@ -247,6 +294,15 @@ function Watchlist({
           </div>
         </>
       )}
+
+      {/* =====================
+          DIRECTOR QUOTE
+      ====================== */}
+
+      <DirectorQuote
+        director="Quentin Tarantino"
+        quote="Movies are my religion and God is my patron."
+      />
     </div>
   );
 }

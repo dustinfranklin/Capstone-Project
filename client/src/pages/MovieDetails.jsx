@@ -3,26 +3,290 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useParams } from "react-router-dom";
-import MovieLoader from "../components/MovieLoader";
 
-function MovieDetails({ currentUser }) {
-  const { id } = useParams();
+import {
+  Link,
+  useParams,
+} from "react-router-dom";
 
-  const [movie, setMovie] = useState(null);
-  const [reviews, setReviews] = useState([]);
+import MovieLoader
+  from "../components/MovieLoader";
 
-  const [movieLoading, setMovieLoading] =
-    useState(true);
+import DirectorQuote
+  from "../components/DirectorQuote";
 
-  const [movieError, setMovieError] =
-    useState("");
 
-  const [rating, setRating] =
-    useState(5);
+/* =========================
+   STAR HELPERS
+========================= */
 
-  const [reviewText, setReviewText] =
-    useState("");
+function displayStars(
+  ratingValue
+) {
+  const roundedRating =
+    Math.round(
+      Number(
+        ratingValue
+      )
+    );
+
+  return (
+    <>
+      {"★".repeat(
+        roundedRating
+      )}
+
+      {"☆".repeat(
+        5 - roundedRating
+      )}
+    </>
+  );
+}
+
+
+function StarSelector({
+  selectedRating,
+  setSelectedRating,
+}) {
+  return (
+    <div className="movie-star-selector">
+      {[1, 2, 3, 4, 5].map(
+        (starNumber) => (
+          <button
+            key={
+              starNumber
+            }
+            type="button"
+            className="movie-star-button"
+            onClick={() =>
+              setSelectedRating(
+                starNumber
+              )
+            }
+            aria-label={`${starNumber} star rating`}
+          >
+            {starNumber <=
+            selectedRating
+              ? "★"
+              : "☆"}
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+
+/* =========================
+   REVIEW CARD
+========================= */
+
+function ReviewCard({
+  review,
+  currentUser,
+  editingReviewId,
+  editRating,
+  setEditRating,
+  editReviewText,
+  setEditReviewText,
+  handleEditSubmit,
+  cancelEditing,
+  startEditing,
+  handleDelete,
+}) {
+  const isCurrentUser =
+    currentUser &&
+    String(
+      review.userId
+    ) ===
+      String(
+        currentUser.id
+      );
+
+  const isEditing =
+    editingReviewId ===
+    review._id;
+
+  return (
+    <article className="movie-review-card">
+      {isEditing ? (
+        <form
+          onSubmit={(
+            event
+          ) =>
+            handleEditSubmit(
+              event,
+              review._id
+            )
+          }
+        >
+          <div className="mb-3">
+            <label className="form-label movie-review-label">
+              Rating
+            </label>
+
+            <StarSelector
+              selectedRating={
+                editRating
+              }
+              setSelectedRating={
+                setEditRating
+              }
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label movie-review-label">
+              Review
+            </label>
+
+            <textarea
+              className="form-control"
+              rows="4"
+              value={
+                editReviewText
+              }
+              onChange={(
+                event
+              ) =>
+                setEditReviewText(
+                  event.target.value
+                )
+              }
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary me-2"
+          >
+            Save Changes
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={
+              cancelEditing
+            }
+          >
+            Cancel
+          </button>
+        </form>
+      ) : (
+        <>
+          <div className="movie-review-top">
+            <div>
+              <span className="movie-review-member-label">
+                Film Club Member
+              </span>
+
+              <h4 className="movie-review-user">
+                {review.userName ||
+                  "Unknown User"}
+              </h4>
+            </div>
+
+            <div className="movie-review-score">
+              <span className="star-rating">
+                {displayStars(
+                  review.rating
+                )}
+              </span>
+
+              <span>
+                {review.rating}/5
+              </span>
+            </div>
+          </div>
+
+          <p className="movie-review-text">
+            {review.review}
+          </p>
+
+          <div className="movie-review-footer">
+            {review.reviewDate && (
+              <span className="movie-review-date">
+                {new Date(
+                  review.reviewDate
+                ).toLocaleDateString()}
+              </span>
+            )}
+
+            {isCurrentUser && (
+              <div>
+                <button
+                  className="btn btn-outline-primary btn-sm me-2"
+                  onClick={() =>
+                    startEditing(
+                      review
+                    )
+                  }
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() =>
+                    handleDelete(
+                      review._id
+                    )
+                  }
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </article>
+  );
+}
+
+
+/* =========================
+   MOVIE DETAILS
+========================= */
+
+function MovieDetails({
+  currentUser,
+}) {
+  const {
+    id,
+  } = useParams();
+
+  const [
+    movie,
+    setMovie,
+  ] = useState(null);
+
+  const [
+    reviews,
+    setReviews,
+  ] = useState([]);
+
+  const [
+    movieLoading,
+    setMovieLoading,
+  ] = useState(true);
+
+  const [
+    movieError,
+    setMovieError,
+  ] = useState("");
+
+  const [
+    rating,
+    setRating,
+  ] = useState(5);
+
+  const [
+    reviewText,
+    setReviewText,
+  ] = useState("");
 
   const [
     reviewMessage,
@@ -64,6 +328,11 @@ function MovieDetails({ currentUser }) {
     setReviewSort,
   ] = useState("newest");
 
+
+  /* =========================
+     LOAD MOVIE
+  ========================= */
+
   useEffect(() => {
     async function getMovie() {
       try {
@@ -103,6 +372,11 @@ function MovieDetails({ currentUser }) {
     getMovie();
   }, [id]);
 
+
+  /* =========================
+     LOAD REVIEWS
+  ========================= */
+
   async function getReviews() {
     try {
       const response =
@@ -128,6 +402,11 @@ function MovieDetails({ currentUser }) {
     getReviews();
   }, [id]);
 
+
+  /* =========================
+     CHECK WATCHLIST
+  ========================= */
+
   useEffect(() => {
     async function checkFavoriteStatus() {
       if (!currentUser) {
@@ -145,17 +424,14 @@ function MovieDetails({ currentUser }) {
           await response.json();
 
         if (response.ok) {
-          const movieIsFavorite =
+          setIsFavorite(
             data.some(
               (favoriteMovie) =>
                 String(
                   favoriteMovie._id
                 ) ===
                 String(id)
-            );
-
-          setIsFavorite(
-            movieIsFavorite
+            )
           );
         }
       } catch (error) {
@@ -167,7 +443,15 @@ function MovieDetails({ currentUser }) {
     }
 
     checkFavoriteStatus();
-  }, [currentUser, id]);
+  }, [
+    currentUser,
+    id,
+  ]);
+
+
+  /* =========================
+     DERIVED REVIEW DATA
+  ========================= */
 
   const averageRating =
     reviews.length > 0
@@ -206,17 +490,17 @@ function MovieDetails({ currentUser }) {
         ...reviews,
       ];
 
-      switch (reviewSort) {
+      switch (
+        reviewSort
+      ) {
         case "oldest":
           sorted.sort(
             (a, b) =>
               new Date(
-                a.reviewDate ||
-                  0
+                a.reviewDate || 0
               ) -
               new Date(
-                b.reviewDate ||
-                  0
+                b.reviewDate || 0
               )
           );
           break;
@@ -250,12 +534,10 @@ function MovieDetails({ currentUser }) {
           sorted.sort(
             (a, b) =>
               new Date(
-                b.reviewDate ||
-                  0
+                b.reviewDate || 0
               ) -
               new Date(
-                a.reviewDate ||
-                  0
+                a.reviewDate || 0
               )
           );
           break;
@@ -267,69 +549,10 @@ function MovieDetails({ currentUser }) {
       reviewSort,
     ]);
 
-  function displayStars(
-    ratingValue
-  ) {
-    const roundedRating =
-      Math.round(
-        Number(
-          ratingValue
-        )
-      );
 
-    return (
-      <>
-        {"★".repeat(
-          roundedRating
-        )}
-
-        {"☆".repeat(
-          5 -
-            roundedRating
-        )}
-      </>
-    );
-  }
-
-  function StarSelector({
-    selectedRating,
-    setSelectedRating,
-  }) {
-    return (
-      <div
-        className="star-rating"
-        style={{
-          fontSize: "2rem",
-          cursor: "pointer",
-          userSelect: "none",
-        }}
-      >
-        {[1, 2, 3, 4, 5].map(
-          (starNumber) => (
-            <span
-              key={
-                starNumber
-              }
-              onClick={() =>
-                setSelectedRating(
-                  starNumber
-                )
-              }
-              style={{
-                marginRight:
-                  "5px",
-              }}
-            >
-              {starNumber <=
-              selectedRating
-                ? "★"
-                : "☆"}
-            </span>
-          )
-        )}
-      </div>
-    );
-  }
+  /* =========================
+     WATCHLIST
+  ========================= */
 
   async function handleFavoriteToggle() {
     if (!currentUser) {
@@ -361,7 +584,8 @@ function MovieDetails({ currentUser }) {
 
       if (response.ok) {
         setIsFavorite(
-          !isFavorite
+          (current) =>
+            !current
         );
       }
 
@@ -383,6 +607,11 @@ function MovieDetails({ currentUser }) {
       );
     }
   }
+
+
+  /* =========================
+     SUBMIT REVIEW
+  ========================= */
 
   async function handleReviewSubmit(
     event
@@ -434,10 +663,7 @@ function MovieDetails({ currentUser }) {
 
       if (response.ok) {
         setRating(5);
-
-        setReviewText(
-          ""
-        );
+        setReviewText("");
 
         await getReviews();
       }
@@ -452,6 +678,11 @@ function MovieDetails({ currentUser }) {
       );
     }
   }
+
+
+  /* =========================
+     EDIT REVIEW
+  ========================= */
 
   function startEditing(
     review
@@ -470,10 +701,9 @@ function MovieDetails({ currentUser }) {
       review.review
     );
 
-    setReviewMessage(
-      ""
-    );
+    setReviewMessage("");
   }
+
 
   function cancelEditing() {
     setEditingReviewId(
@@ -481,11 +711,9 @@ function MovieDetails({ currentUser }) {
     );
 
     setEditRating(5);
-
-    setEditReviewText(
-      ""
-    );
+    setEditReviewText("");
   }
+
 
   async function handleEditSubmit(
     event,
@@ -529,15 +757,7 @@ function MovieDetails({ currentUser }) {
       );
 
       if (response.ok) {
-        setEditingReviewId(
-          null
-        );
-
-        setEditRating(5);
-
-        setEditReviewText(
-          ""
-        );
+        cancelEditing();
 
         await getReviews();
       }
@@ -552,6 +772,11 @@ function MovieDetails({ currentUser }) {
       );
     }
   }
+
+
+  /* =========================
+     DELETE REVIEW
+  ========================= */
 
   async function handleDelete(
     reviewId
@@ -570,8 +795,7 @@ function MovieDetails({ currentUser }) {
         await fetch(
           `http://localhost:4000/api/reviews/${reviewId}`,
           {
-            method:
-              "DELETE",
+            method: "DELETE",
 
             headers: {
               "Content-Type":
@@ -608,6 +832,11 @@ function MovieDetails({ currentUser }) {
     }
   }
 
+
+  /* =========================
+     LOADING / ERROR
+  ========================= */
+
   if (movieLoading) {
     return (
       <MovieLoader
@@ -628,497 +857,445 @@ function MovieDetails({ currentUser }) {
     return null;
   }
 
+
   return (
-    <div>
-      {/* MOVIE INFORMATION */}
+    <div className="movie-details-page">
+      {/* =====================
+          FEATURE PRESENTATION
+      ====================== */}
 
-      <div className="row align-items-start mb-5 g-4">
-        {/* POSTER */}
+      <section className="movie-details-hero">
+        <div className="row align-items-start g-4">
+          {/* POSTER */}
 
-        <div className="col-lg-3 col-md-4">
-          {movie.poster && (
-            <img
-              src={
-                movie.poster
-              }
-              alt={`${movie.title} poster`}
-              className="img-fluid rounded shadow movie-details-poster"
-            />
-          )}
-        </div>
-
-        {/* DETAILS */}
-
-        <div className="col-lg-5 col-md-8 text-center">
-          <h1 className="cinematic-heading movie-details-title">
-            {
-              movie.title
-            }
-          </h1>
-
-          {movie.mpaRating && (
-            <div className="mb-3">
-              <span className="movie-rating-label">
-                {
-                  movie.mpaRating
-                }
-              </span>
-            </div>
-          )}
-
-          {movie.synopsis && (
-            <p className="movie-synopsis">
-              {
-                movie.synopsis
-              }
-            </p>
-          )}
-
-          <div className="movie-details-info">
-            <p>
-              <strong>
-                Year:
-              </strong>{" "}
-              {
-                movie.year
-              }
-            </p>
-
-            <p>
-              <strong>
-                Genre:
-              </strong>{" "}
-
-              {Array.isArray(
-                movie.genre
-              )
-                ? movie.genre.join(
-                    ", "
-                  )
-                : movie.genre}
-            </p>
-
-            <p>
-              <strong>
-                Director:
-              </strong>{" "}
-              {
-                movie.director
-              }
-            </p>
-
-            <p>
-              <strong>
-                Average Rating:
-              </strong>{" "}
-
-              {averageRating ? (
-                <>
-                  <span className="star-rating">
-                    {displayStars(
-                      averageRating
-                    )}
-                  </span>{" "}
-
-                  (
-                  {
-                    averageRating
+          <div className="col-lg-3 col-md-4">
+            <div className="movie-details-poster-wrapper">
+              {movie.poster && (
+                <img
+                  src={
+                    movie.poster
                   }
-                  /5)
-                </>
-              ) : (
-                "No ratings yet"
+                  alt={`${movie.title} poster`}
+                  className="movie-details-poster"
+                />
               )}
-            </p>
-
-            <p>
-              <strong>
-                Number of Reviews:
-              </strong>{" "}
-              {
-                reviews.length
-              }
-            </p>
+            </div>
           </div>
 
-          {/* WATCHLIST */}
 
-          <div className="mt-4">
-            {currentUser ? (
-              <>
-                <button
-                  type="button"
-                  className={
-                    isFavorite
-                      ? "btn btn-danger"
-                      : "btn btn-outline-danger"
-                  }
-                  onClick={
-                    handleFavoriteToggle
-                  }
-                  disabled={
-                    favoriteLoading
-                  }
-                >
-                  {favoriteLoading
-                    ? "Updating..."
-                    : isFavorite
-                      ? "♥ In Watchlist"
-                      : "♡ Add to Watchlist"}
-                </button>
+          {/* DETAILS */}
 
-                {favoriteMessage && (
-                  <div className="mt-2">
-                    <small>
-                      {
-                        favoriteMessage
-                      }
-                    </small>
-                  </div>
+          <div className="col-lg-5 col-md-8">
+            <div className="movie-details-content">
+              <span className="movie-details-eyebrow">
+                Feature Presentation
+              </span>
+
+              <h1 className="cinematic-heading movie-details-title">
+                {movie.title}
+              </h1>
+
+              <div className="movie-details-meta-row">
+                {movie.year && (
+                  <span>
+                    {movie.year}
+                  </span>
                 )}
-              </>
-            ) : (
-              <div className="alert alert-secondary mt-3">
-                Log in to add
-                this movie to
-                your watchlist.
+
+                {movie.mpaRating && (
+                  <span className="movie-rating-label">
+                    {movie.mpaRating}
+                  </span>
+                )}
+
+                {movie.director && (
+                  <span>
+                    {movie.director}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* TRAILER */}
+              {movie.synopsis && (
+                <p className="movie-synopsis">
+                  {movie.synopsis}
+                </p>
+              )}
 
-        <div className="col-lg-4 col-md-12">
-          {movie.trailerId ? (
-            <div className="movie-trailer-section">
-              <h3 className="text-center mb-3">
-                Trailer
-              </h3>
+              <div className="movie-details-info-grid">
+                <div className="movie-detail-stat">
+                  <span className="movie-detail-label">
+                    Genre
+                  </span>
 
-              <div className="ratio ratio-16x9 trailer-container">
-                <iframe
-                  src={`https://www.youtube.com/embed/${movie.trailerId}`}
-                  title={`${movie.title} Trailer`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                ></iframe>
+                  <span className="movie-detail-value">
+                    {Array.isArray(
+                      movie.genre
+                    )
+                      ? movie.genre.join(
+                          ", "
+                        )
+                      : movie.genre}
+                  </span>
+                </div>
+
+
+                <div className="movie-detail-stat">
+                  <span className="movie-detail-label">
+                    Community Rating
+                  </span>
+
+                  <span className="movie-detail-value">
+                    {averageRating ? (
+                      <>
+                        <span className="star-rating">
+                          {displayStars(
+                            averageRating
+                          )}
+                        </span>{" "}
+
+                        {averageRating}/5
+                      </>
+                    ) : (
+                      "No ratings yet"
+                    )}
+                  </span>
+                </div>
+
+
+                <div className="movie-detail-stat">
+                  <span className="movie-detail-label">
+                    Reviews
+                  </span>
+
+                  <span className="movie-detail-value">
+                    {reviews.length}
+                  </span>
+                </div>
+
+
+                <div className="movie-detail-stat">
+                  <span className="movie-detail-label">
+                    Director
+                  </span>
+
+                  <span className="movie-detail-value">
+                    {movie.director}
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="alert alert-secondary">
-              Trailer
-              unavailable.
-            </div>
-          )}
-        </div>
-      </div>
 
-      <hr />
 
-      {/* REVIEWS */}
+              {/* WATCHLIST */}
 
-      <div className="review-section-header mb-4">
-        <h2 className="mb-0">
-          Reviews
-        </h2>
-
-        {reviews.length >
-          1 && (
-          <div className="review-sort-control">
-            <label
-              htmlFor="reviewSort"
-              className="form-label mb-1"
-            >
-              Sort Reviews
-            </label>
-
-            <select
-              id="reviewSort"
-              className="form-select"
-              value={
-                reviewSort
-              }
-              onChange={(
-                event
-              ) =>
-                setReviewSort(
-                  event
-                    .target
-                    .value
-                )
-              }
-            >
-              <option value="newest">
-                Newest First
-              </option>
-
-              <option value="oldest">
-                Oldest First
-              </option>
-
-              <option value="highest">
-                Highest Rated
-              </option>
-
-              <option value="lowest">
-                Lowest Rated
-              </option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      {reviewMessage && (
-        <div className="alert alert-info">
-          {
-            reviewMessage
-          }
-        </div>
-      )}
-
-      {reviews.length ===
-        0 && (
-        <div className="alert alert-secondary">
-          No reviews yet. Be
-          the first to review
-          this movie.
-        </div>
-      )}
-
-      {sortedReviews.map(
-        (review) => {
-          const isCurrentUser =
-            currentUser &&
-            String(
-              review.userId
-            ) ===
-              String(
-                currentUser.id
-              );
-
-          return (
-            <div
-              className="card mb-3 shadow-sm"
-              key={
-                review._id
-              }
-            >
-              <div className="card-body">
-                {editingReviewId ===
-                review._id ? (
-                  <form
-                    onSubmit={(
-                      event
-                    ) =>
-                      handleEditSubmit(
-                        event,
-                        review._id
-                      )
-                    }
-                  >
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Rating
-                      </label>
-
-                      <StarSelector
-                        selectedRating={
-                          editRating
-                        }
-                        setSelectedRating={
-                          setEditRating
-                        }
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Review
-                      </label>
-
-                      <textarea
-                        className="form-control"
-                        rows="4"
-                        value={
-                          editReviewText
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          setEditReviewText(
-                            event
-                              .target
-                              .value
-                          )
-                        }
-                        required
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="btn btn-primary me-2"
-                    >
-                      Save Changes
-                    </button>
-
+              <div className="movie-details-watchlist">
+                {currentUser ? (
+                  <>
                     <button
                       type="button"
-                      className="btn btn-secondary"
+                      className={
+                        isFavorite
+                          ? "btn btn-danger"
+                          : "btn btn-outline-danger"
+                      }
                       onClick={
-                        cancelEditing
+                        handleFavoriteToggle
+                      }
+                      disabled={
+                        favoriteLoading
                       }
                     >
-                      Cancel
+                      {favoriteLoading
+                        ? "Updating..."
+                        : isFavorite
+                          ? "♥ In Watchlist"
+                          : "♡ Add to Watchlist"}
                     </button>
-                  </form>
-                ) : (
-                  <>
-                    <h5 className="card-title">
-                      {review.userName ||
-                        "Unknown User"}
-                    </h5>
 
-                    <p className="mb-2">
-                      <strong>
-                        Rating:
-                      </strong>{" "}
-
-                      <span className="star-rating">
-                        {displayStars(
-                          review.rating
-                        )}
-                      </span>
-                    </p>
-
-                    <p className="card-text">
-                      {
-                        review.review
-                      }
-                    </p>
-
-                    {review.reviewDate && (
-                      <p className="text-muted mb-2">
-                        {new Date(
-                          review.reviewDate
-                        ).toLocaleDateString()}
-                      </p>
-                    )}
-
-                    {isCurrentUser && (
-                      <div>
-                        <button
-                          className="btn btn-outline-primary btn-sm me-2"
-                          onClick={() =>
-                            startEditing(
-                              review
-                            )
-                          }
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={() =>
-                            handleDelete(
-                              review._id
-                            )
-                          }
-                        >
-                          Delete
-                        </button>
+                    {favoriteMessage && (
+                      <div className="movie-watchlist-message">
+                        {favoriteMessage}
                       </div>
                     )}
                   </>
+                ) : (
+                  <div className="movie-login-note">
+                    <Link to="/login">
+                      Log in
+                    </Link>{" "}
+                    to add this movie
+                    to your watchlist.
+                  </div>
                 )}
               </div>
             </div>
-          );
-        }
-      )}
-
-      <hr className="my-5" />
-
-      {/* WRITE REVIEW */}
-
-      <h2 className="mb-4">
-        Write a Review
-      </h2>
-
-      {!currentUser ? (
-        <div className="alert alert-warning">
-          You must be logged
-          in to write a
-          review.
-        </div>
-      ) : currentUserReview ? (
-        <div className="alert alert-info">
-          You have already
-          reviewed this movie.
-          You can edit your
-          existing review
-          above.
-        </div>
-      ) : (
-        <form
-          onSubmit={
-            handleReviewSubmit
-          }
-          className="mb-5"
-        >
-          <div className="mb-3">
-            <label className="form-label">
-              Rating
-            </label>
-
-            <StarSelector
-              selectedRating={
-                rating
-              }
-              setSelectedRating={
-                setRating
-              }
-            />
           </div>
 
-          <div className="mb-3">
-            <label
-              htmlFor="reviewText"
-              className="form-label"
-            >
-              Review
-            </label>
 
-            <textarea
-              id="reviewText"
-              className="form-control"
-              rows="5"
-              value={
-                reviewText
-              }
-              onChange={(
-                event
-              ) =>
-                setReviewText(
+          {/* TRAILER */}
+
+          <div className="col-lg-4 col-md-12">
+            <div className="movie-trailer-card">
+              <span className="movie-details-eyebrow">
+                Now Playing
+              </span>
+
+              <h2 className="cinematic-heading">
+                Trailer
+              </h2>
+
+              {movie.trailerId ? (
+                <div className="ratio ratio-16x9 trailer-container">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${movie.trailerId}`}
+                    title={`${movie.title} Trailer`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ) : (
+                <div className="movie-trailer-unavailable">
+                  Trailer unavailable.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* =====================
+          REVIEWS
+      ====================== */}
+
+      <section className="movie-reviews-section">
+        <div className="movie-section-header">
+          <div>
+            <span className="movie-details-eyebrow">
+              Community
+            </span>
+
+            <h2 className="cinematic-heading">
+              Reviews
+            </h2>
+          </div>
+
+          {reviews.length > 1 && (
+            <div className="review-sort-control">
+              <label
+                htmlFor="reviewSort"
+                className="form-label mb-1"
+              >
+                Sort Reviews
+              </label>
+
+              <select
+                id="reviewSort"
+                className="form-select"
+                value={
+                  reviewSort
+                }
+                onChange={(
                   event
-                    .target
-                    .value
-                )
-              }
-              required
-            />
-          </div>
+                ) =>
+                  setReviewSort(
+                    event.target.value
+                  )
+                }
+              >
+                <option value="newest">
+                  Newest First
+                </option>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
+                <option value="oldest">
+                  Oldest First
+                </option>
+
+                <option value="highest">
+                  Highest Rated
+                </option>
+
+                <option value="lowest">
+                  Lowest Rated
+                </option>
+              </select>
+            </div>
+          )}
+        </div>
+
+
+        {reviewMessage && (
+          <div className="alert alert-info">
+            {reviewMessage}
+          </div>
+        )}
+
+
+        {reviews.length === 0 && (
+          <div className="movie-no-reviews">
+            <h4>
+              No Reviews Yet
+            </h4>
+
+            <p>
+              Be the first member
+              to review this film.
+            </p>
+          </div>
+        )}
+
+
+        <div className="movie-review-list">
+          {sortedReviews.map(
+            (review) => (
+              <ReviewCard
+                key={
+                  review._id
+                }
+                review={
+                  review
+                }
+                currentUser={
+                  currentUser
+                }
+                editingReviewId={
+                  editingReviewId
+                }
+                editRating={
+                  editRating
+                }
+                setEditRating={
+                  setEditRating
+                }
+                editReviewText={
+                  editReviewText
+                }
+                setEditReviewText={
+                  setEditReviewText
+                }
+                handleEditSubmit={
+                  handleEditSubmit
+                }
+                cancelEditing={
+                  cancelEditing
+                }
+                startEditing={
+                  startEditing
+                }
+                handleDelete={
+                  handleDelete
+                }
+              />
+            )
+          )}
+        </div>
+      </section>
+
+
+      {/* =====================
+          WRITE REVIEW
+      ====================== */}
+
+      <section className="movie-write-review-section">
+        <div className="movie-section-heading-centered">
+          <span className="movie-details-eyebrow">
+            Your Take
+          </span>
+
+          <h2 className="cinematic-heading">
+            Write a Review
+          </h2>
+        </div>
+
+
+        {!currentUser ? (
+          <div className="movie-review-login-card">
+            <p>
+              You must be logged
+              in to write a
+              review.
+            </p>
+
+            <Link
+              to="/login"
+              className="btn btn-primary"
+            >
+              Log In
+            </Link>
+          </div>
+        ) : currentUserReview ? (
+          <div className="movie-review-existing-card">
+            You have already
+            reviewed this movie.
+            You can edit your
+            existing review above.
+          </div>
+        ) : (
+          <form
+            onSubmit={
+              handleReviewSubmit
+            }
+            className="movie-review-form"
           >
-            Submit Review
-          </button>
-        </form>
-      )}
+            <div className="mb-3">
+              <label className="form-label movie-review-label">
+                Rating
+              </label>
+
+              <StarSelector
+                selectedRating={
+                  rating
+                }
+                setSelectedRating={
+                  setRating
+                }
+              />
+            </div>
+
+            <div className="mb-3">
+              <label
+                htmlFor="reviewText"
+                className="form-label movie-review-label"
+              >
+                Review
+              </label>
+
+              <textarea
+                id="reviewText"
+                className="form-control"
+                rows="5"
+                value={
+                  reviewText
+                }
+                onChange={(
+                  event
+                ) =>
+                  setReviewText(
+                    event.target.value
+                  )
+                }
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+            >
+              Submit Review
+            </button>
+          </form>
+        )}
+      </section>
+
+
+      {/* =====================
+          DIRECTOR QUOTE
+      ====================== */}
+
+      <DirectorQuote
+        director="Christopher Nolan"
+        quote="I think there's a vague sense out there that movies are becoming more and more unreal. I know I've felt it."
+      />
     </div>
   );
 }
