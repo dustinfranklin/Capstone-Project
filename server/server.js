@@ -2,18 +2,119 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import {
   MongoClient,
   ObjectId,
 } from "mongodb";
 
+
 dotenv.config();
+
+const __filename =
+  fileURLToPath(import.meta.url);
+
+const __dirname =
+  path.dirname(__filename);
+
+const uploadsDirectory =
+  path.join(__dirname, "uploads");
+
+if (
+  !fs.existsSync(
+    uploadsDirectory
+  )
+) {
+  fs.mkdirSync(
+    uploadsDirectory
+  );
+}
 
 const app = express();
 const PORT = 4000;
 
 app.use(cors());
 app.use(express.json());
+app.use(
+  "/uploads",
+  express.static(
+    uploadsDirectory
+  )
+);
+const profilePictureStorage =
+  multer.diskStorage({
+    destination: (
+      req,
+      file,
+      callback
+    ) => {
+      callback(
+        null,
+        uploadsDirectory
+      );
+    },
+
+    filename: (
+      req,
+      file,
+      callback
+    ) => {
+      const extension =
+        path.extname(
+          file.originalname
+        );
+
+      const uniqueName =
+        `profile-${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}${extension}`;
+
+      callback(
+        null,
+        uniqueName
+      );
+    },
+  });
+
+const profilePictureUpload =
+  multer({
+    storage:
+      profilePictureStorage,
+
+    limits: {
+      fileSize:
+        5 * 1024 * 1024,
+    },
+
+    fileFilter: (
+      req,
+      file,
+      callback
+    ) => {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ];
+
+      if (
+        allowedTypes.includes(
+          file.mimetype
+        )
+      ) {
+        callback(null, true);
+      } else {
+        callback(
+          new Error(
+            "Only JPG, PNG, and WEBP images are allowed."
+          )
+        );
+      }
+    },
+  });
 
 const client = new MongoClient(
   process.env.MONGODB_URI
@@ -47,7 +148,6 @@ app.get(
         });
       }
 
-      // Search TMDB for the actor
       const personResponse = await fetch(
         `https://api.themoviedb.org/3/search/person?api_key=${
           process.env.TMDB_API_KEY
@@ -81,7 +181,6 @@ app.get(
         });
       }
 
-      // Prefer exact name match
       const exactMatch =
         personData.results.find(
           (person) =>
@@ -97,7 +196,6 @@ app.get(
         exactMatch ||
         personData.results[0];
 
-      // Get the actor's movie credits
       const creditsResponse =
         await fetch(
           `https://api.themoviedb.org/3/person/${actor.id}/movie_credits?api_key=${process.env.TMDB_API_KEY}`
@@ -118,8 +216,6 @@ app.get(
           });
       }
 
-      // Create a list of TMDB movie IDs
-      // the actor appeared in
       const actorMovieIds =
         new Set(
           (creditsData.cast || []).map(
@@ -127,7 +223,6 @@ app.get(
           )
         );
 
-      // Get our movies, including ratings
       const ourMovies = await db
         .collection("movies")
         .aggregate([
@@ -172,7 +267,6 @@ app.get(
         ])
         .toArray();
 
-      // Compare TMDB IDs directly
       const matchingMovies =
         ourMovies.filter(
           (movie) =>
@@ -210,69 +304,73 @@ app.get(
     }
   }
 );
+
 // =========================
 // GET ALL MOVIES
 // =========================
 
-app.get("/api/movies", async (req, res) => {
-  try {
-    const movies = await db
-      .collection("movies")
-      .aggregate([
-        {
-          $lookup: {
-            from: "reviews",
-            localField: "_id",
-            foreignField: "movieId",
-            as: "reviews",
-          },
-        },
-        {
-          $addFields: {
-            averageRating: {
-              $cond: [
-                {
-                  $gt: [
-                    {
-                      $size:
-                        "$reviews",
-                    },
-                    0,
-                  ],
-                },
-                {
-                  $avg:
-                    "$reviews.rating",
-                },
-                0,
-              ],
-            },
-            reviewCount: {
-              $size: "$reviews",
+app.get(
+  "/api/movies",
+  async (req, res) => {
+    try {
+      const movies = await db
+        .collection("movies")
+        .aggregate([
+          {
+            $lookup: {
+              from: "reviews",
+              localField: "_id",
+              foreignField: "movieId",
+              as: "reviews",
             },
           },
-        },
-        {
-          $project: {
-            reviews: 0,
+          {
+            $addFields: {
+              averageRating: {
+                $cond: [
+                  {
+                    $gt: [
+                      {
+                        $size:
+                          "$reviews",
+                      },
+                      0,
+                    ],
+                  },
+                  {
+                    $avg:
+                      "$reviews.rating",
+                  },
+                  0,
+                ],
+              },
+              reviewCount: {
+                $size: "$reviews",
+              },
+            },
           },
-        },
-      ])
-      .toArray();
+          {
+            $project: {
+              reviews: 0,
+            },
+          },
+        ])
+        .toArray();
 
-    res.json(movies);
-  } catch (error) {
-    console.error(
-      "Get movies error:",
-      error
-    );
+      res.json(movies);
+    } catch (error) {
+      console.error(
+        "Get movies error:",
+        error
+      );
 
-    res.status(500).json({
-      message:
-        "Could not get movies.",
-    });
+      res.status(500).json({
+        message:
+          "Could not get movies.",
+      });
+    }
   }
-});
+);
 
 // =========================
 // GET ONE MOVIE
@@ -283,7 +381,9 @@ app.get(
   async (req, res) => {
     try {
       if (
-        !ObjectId.isValid(req.params.id)
+        !ObjectId.isValid(
+          req.params.id
+        )
       ) {
         return res.status(400).json({
           message:
@@ -330,7 +430,9 @@ app.get(
   async (req, res) => {
     try {
       if (
-        !ObjectId.isValid(req.params.id)
+        !ObjectId.isValid(
+          req.params.id
+        )
       ) {
         return res.status(400).json({
           message:
@@ -649,6 +751,671 @@ app.delete(
 );
 
 // =========================
+// FAVORITES / WATCHLIST
+// GET USER FAVORITES
+// =========================
+
+app.get(
+  "/api/users/:userId/favorites",
+  async (req, res) => {
+    try {
+      if (
+        !ObjectId.isValid(
+          req.params.userId
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid user ID.",
+        });
+      }
+
+      const userId =
+        new ObjectId(
+          req.params.userId
+        );
+
+      const user = await db
+        .collection("users")
+        .findOne({
+          _id: userId,
+        });
+
+      if (!user) {
+        return res.status(404).json({
+          message:
+            "User not found.",
+        });
+      }
+
+      const favoriteIds =
+        user.favorites || [];
+
+      if (
+        favoriteIds.length === 0
+      ) {
+        return res.json([]);
+      }
+
+      const favorites = await db
+        .collection("movies")
+        .aggregate([
+          {
+            $match: {
+              _id: {
+                $in: favoriteIds,
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: "reviews",
+              localField: "_id",
+              foreignField: "movieId",
+              as: "reviews",
+            },
+          },
+          {
+            $addFields: {
+              averageRating: {
+                $cond: [
+                  {
+                    $gt: [
+                      {
+                        $size:
+                          "$reviews",
+                      },
+                      0,
+                    ],
+                  },
+                  {
+                    $avg:
+                      "$reviews.rating",
+                  },
+                  0,
+                ],
+              },
+              reviewCount: {
+                $size: "$reviews",
+              },
+            },
+          },
+          {
+            $project: {
+              reviews: 0,
+            },
+          },
+        ])
+        .toArray();
+
+      res.json(favorites);
+    } catch (error) {
+      console.error(
+        "Get favorites error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not get favorites.",
+      });
+    }
+  }
+);
+
+// =========================
+// ADD MOVIE TO FAVORITES
+// =========================
+
+app.post(
+  "/api/users/:userId/favorites/:movieId",
+  async (req, res) => {
+    try {
+      const {
+        userId,
+        movieId,
+      } = req.params;
+
+      if (
+        !ObjectId.isValid(userId) ||
+        !ObjectId.isValid(movieId)
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid user or movie ID.",
+        });
+      }
+
+      const userObjectId =
+        new ObjectId(userId);
+
+      const movieObjectId =
+        new ObjectId(movieId);
+
+      const user = await db
+        .collection("users")
+        .findOne({
+          _id: userObjectId,
+        });
+
+      if (!user) {
+        return res.status(404).json({
+          message:
+            "User not found.",
+        });
+      }
+
+      const movie = await db
+        .collection("movies")
+        .findOne({
+          _id: movieObjectId,
+        });
+
+      if (!movie) {
+        return res.status(404).json({
+          message:
+            "Movie not found.",
+        });
+      }
+
+      await db
+        .collection("users")
+        .updateOne(
+          {
+            _id: userObjectId,
+          },
+          {
+            $addToSet: {
+              favorites:
+                movieObjectId,
+            },
+          }
+        );
+
+      res.status(201).json({
+        message:
+          "Movie added to watchlist.",
+      });
+    } catch (error) {
+      console.error(
+        "Add favorite error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not add movie to watchlist.",
+      });
+    }
+  }
+);
+
+// =========================
+// REMOVE MOVIE FROM FAVORITES
+// =========================
+
+app.delete(
+  "/api/users/:userId/favorites/:movieId",
+  async (req, res) => {
+    try {
+      const {
+        userId,
+        movieId,
+      } = req.params;
+
+      if (
+        !ObjectId.isValid(userId) ||
+        !ObjectId.isValid(movieId)
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid user or movie ID.",
+        });
+      }
+
+      const userObjectId =
+        new ObjectId(userId);
+
+      const movieObjectId =
+        new ObjectId(movieId);
+
+      const user = await db
+        .collection("users")
+        .findOne({
+          _id: userObjectId,
+        });
+
+      if (!user) {
+        return res.status(404).json({
+          message:
+            "User not found.",
+        });
+      }
+
+      await db
+        .collection("users")
+        .updateOne(
+          {
+            _id: userObjectId,
+          },
+          {
+            $pull: {
+              favorites:
+                movieObjectId,
+            },
+          }
+        );
+
+      res.json({
+        message:
+          "Movie removed from watchlist.",
+      });
+    } catch (error) {
+      console.error(
+        "Remove favorite error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not remove movie from watchlist.",
+      });
+    }
+  }
+);
+
+// =========================
+// UPLOAD PROFILE PICTURE
+// =========================
+
+app.post(
+  "/api/users/:userId/profile-picture",
+
+  profilePictureUpload.single(
+    "profilePicture"
+  ),
+
+  async (req, res) => {
+    try {
+      if (
+        !ObjectId.isValid(
+          req.params.userId
+        )
+      ) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Invalid user ID.",
+          });
+      }
+
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Please choose an image.",
+          });
+      }
+
+      const userId =
+        new ObjectId(
+          req.params.userId
+        );
+
+      const profilePic =
+        `http://localhost:4000/uploads/${req.file.filename}`;
+
+      const result = await db
+        .collection("users")
+        .findOneAndUpdate(
+          {
+            _id: userId,
+          },
+          {
+            $set: {
+              profilePic,
+            },
+          },
+          {
+            returnDocument:
+              "after",
+            projection: {
+              password: 0,
+            },
+          }
+        );
+
+      if (!result) {
+        return res
+          .status(404)
+          .json({
+            message:
+              "User not found.",
+          });
+      }
+
+      res.json({
+        message:
+          "Profile picture updated successfully.",
+
+        profilePic:
+          result.profilePic,
+      });
+    } catch (error) {
+      console.error(
+        "Profile picture upload error:",
+        error
+      );
+
+      res
+        .status(500)
+        .json({
+          message:
+            "Could not upload profile picture.",
+        });
+    }
+  }
+);
+
+// =========================
+// USER PROFILE
+// GET USER PROFILE
+// =========================
+
+app.get(
+  "/api/users/:userId/profile",
+  async (req, res) => {
+    try {
+      if (
+        !ObjectId.isValid(
+          req.params.userId
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid user ID.",
+        });
+      }
+
+      const userId =
+        new ObjectId(
+          req.params.userId
+        );
+
+      const user = await db
+        .collection("users")
+        .findOne(
+          {
+            _id: userId,
+          },
+          {
+            projection: {
+              password: 0,
+            },
+          }
+        );
+
+      if (!user) {
+        return res.status(404).json({
+          message:
+            "User not found.",
+        });
+      }
+
+      const reviews = await db
+        .collection("reviews")
+        .aggregate([
+          {
+            $match: {
+              userId,
+            },
+          },
+          {
+            $lookup: {
+              from: "movies",
+              localField:
+                "movieId",
+              foreignField:
+                "_id",
+              as: "movie",
+            },
+          },
+          {
+            $unwind: {
+              path: "$movie",
+              preserveNullAndEmptyArrays:
+                true,
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              movieId: 1,
+              rating: 1,
+              review: 1,
+              reviewDate: 1,
+              movieTitle:
+                "$movie.title",
+              moviePoster:
+                "$movie.poster",
+              movieDirector:
+                "$movie.director",
+            },
+          },
+          {
+            $sort: {
+              reviewDate: -1,
+            },
+          },
+        ])
+        .toArray();
+
+      const reviewCount =
+        reviews.length;
+
+      const averageRating =
+        reviewCount > 0
+          ? reviews.reduce(
+              (
+                total,
+                review
+              ) =>
+                total +
+                Number(
+                  review.rating
+                ),
+              0
+            ) / reviewCount
+          : 0;
+
+      const watchlistCount =
+        Array.isArray(
+          user.favorites
+        )
+          ? user.favorites.length
+          : 0;
+
+      res.json({
+        user: {
+          id: user._id,
+          firstName:
+            user.firstName,
+          lastName:
+            user.lastName,
+          username:
+            user.username,
+          email: user.email,
+          profilePic:
+            user.profilePic || "",
+          bio: user.bio || "",
+        },
+        stats: {
+          reviewCount,
+          averageRating,
+          watchlistCount,
+        },
+        reviews,
+      });
+    } catch (error) {
+      console.error(
+        "Get profile error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not get user profile.",
+      });
+    }
+  }
+);
+
+// =========================
+// UPDATE USER PROFILE
+// =========================
+
+app.put(
+  "/api/users/:userId/profile",
+  async (req, res) => {
+    try {
+      if (
+        !ObjectId.isValid(
+          req.params.userId
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid user ID.",
+        });
+      }
+
+      const {
+        firstName,
+        lastName,
+        bio,
+      } = req.body;
+
+      const cleanFirstName =
+        firstName?.trim();
+
+      const cleanLastName =
+        lastName?.trim();
+
+      const cleanBio =
+        bio?.trim() || "";
+
+      if (
+        !cleanFirstName ||
+        !cleanLastName
+      ) {
+        return res.status(400).json({
+          message:
+            "First name and last name are required.",
+        });
+      }
+
+      if (
+        cleanBio.length > 300
+      ) {
+        return res.status(400).json({
+          message:
+            "Bio must be 300 characters or fewer.",
+        });
+      }
+
+      if (
+        cleanProfilePic.length > 1000
+      ) {
+        return res.status(400).json({
+          message:
+            "Profile picture URL is too long.",
+        });
+      }
+
+      if (
+        cleanProfilePic &&
+        !/^https?:\/\/.+/i.test(
+          cleanProfilePic
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Profile picture must use a valid http or https URL.",
+        });
+      }
+
+      const userId =
+        new ObjectId(
+          req.params.userId
+        );
+
+      const result = await db
+        .collection("users")
+        .findOneAndUpdate(
+          {
+            _id: userId,
+          },
+          {
+            $set: {
+              firstName:
+                cleanFirstName,
+              lastName:
+                cleanLastName,
+              bio: cleanBio,
+            },
+          },
+          {
+            returnDocument:
+              "after",
+            projection: {
+              password: 0,
+            },
+          }
+        );
+
+      if (!result) {
+        return res.status(404).json({
+          message:
+            "User not found.",
+        });
+      }
+
+      res.json({
+        message:
+          "Profile updated successfully.",
+        user: {
+          id: result._id,
+          firstName:
+            result.firstName,
+          lastName:
+            result.lastName,
+          username:
+            result.username,
+          email:
+            result.email,
+          profilePic:
+            result.profilePic || "",
+          bio:
+            result.bio || "",
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Update profile error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Could not update user profile.",
+      });
+    }
+  }
+);
+
+// =========================
 // REGISTER
 // =========================
 
@@ -717,6 +1484,14 @@ app.post(
         email,
         password:
           hashedPassword,
+
+
+          // Every new user starts
+          // with an empty watchlist
+          // and blank profile fields.
+          favorites: [],
+          profilePic: "",
+          bio: "",
       };
 
       const result =
@@ -804,7 +1579,8 @@ app.post(
             user.lastName,
           username:
             user.username,
-          email: user.email,
+          email:
+            user.email,
         },
       });
     } catch (error) {

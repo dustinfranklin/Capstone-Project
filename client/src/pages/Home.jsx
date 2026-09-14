@@ -3,11 +3,18 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import { Link } from "react-router-dom";
+import MovieLoader from "../components/MovieLoader";
 
 function Home() {
-  const [movies, setMovies] =
-    useState([]);
+  const [movies, setMovies] = useState([]);
+
+  const [moviesLoading, setMoviesLoading] =
+    useState(true);
+
+  const [movieLoadError, setMovieLoadError] =
+    useState("");
 
   const [searchTerm, setSearchTerm] =
     useState("");
@@ -55,6 +62,9 @@ function Home() {
   useEffect(() => {
     async function getMovies() {
       try {
+        setMoviesLoading(true);
+        setMovieLoadError("");
+
         const response = await fetch(
           "http://localhost:4000/api/movies"
         );
@@ -69,51 +79,211 @@ function Home() {
             "Could not load movies:",
             data
           );
+
+          setMovieLoadError(
+            data.message ||
+              "Could not load the filmography."
+          );
         }
       } catch (error) {
         console.error(
           "Movie fetch error:",
           error
         );
+
+        setMovieLoadError(
+          "Could not connect to the server."
+        );
+      } finally {
+        setMoviesLoading(false);
       }
     }
 
     getMovies();
   }, []);
 
-  const directors = useMemo(() => {
-    return [
-      ...new Set(
-        movies
-          .map(
+  const genres =
+    useMemo(() => {
+      const allGenres =
+        movies.flatMap(
+          (movie) =>
+            movie.genre || []
+        );
+
+      return [
+        ...new Set(
+          allGenres
+        ),
+      ].sort();
+    }, [movies]);
+
+  const directorCounts =
+    useMemo(() => {
+      return {
+        all: movies.length,
+
+        nolan: movies.filter(
+          (movie) =>
+            movie.director ===
+            "Christopher Nolan"
+        ).length,
+
+        tarantino:
+          movies.filter(
             (movie) =>
-              movie.director
-          )
-          .filter(Boolean)
-      ),
-    ].sort();
-  }, [movies]);
+              movie.director ===
+              "Quentin Tarantino"
+          ).length,
+      };
+    }, [movies]);
 
-  const genres = useMemo(() => {
-    const allGenres =
-      movies.flatMap(
-        (movie) =>
-          movie.genre || []
-      );
+  const filmStats =
+    useMemo(() => {
+      const ratedMovies =
+        movies.filter(
+          (movie) =>
+            Number(
+              movie.reviewCount
+            ) > 0
+        );
 
-    return [
-      ...new Set(allGenres),
-    ].sort();
-  }, [movies]);
+      const nolanMovies =
+        ratedMovies.filter(
+          (movie) =>
+            movie.director ===
+            "Christopher Nolan"
+        );
+
+      const tarantinoMovies =
+        ratedMovies.filter(
+          (movie) =>
+            movie.director ===
+            "Quentin Tarantino"
+        );
+
+      function getHighestRated(
+        movieList
+      ) {
+        if (
+          movieList.length ===
+          0
+        ) {
+          return null;
+        }
+
+        return [
+          ...movieList,
+        ].sort(
+          (a, b) =>
+            Number(
+              b.averageRating
+            ) -
+            Number(
+              a.averageRating
+            )
+        )[0];
+      }
+
+      function getDirectorAverage(
+        movieList
+      ) {
+        if (
+          movieList.length ===
+          0
+        ) {
+          return null;
+        }
+
+        const total =
+          movieList.reduce(
+            (
+              sum,
+              movie
+            ) =>
+              sum +
+              Number(
+                movie.averageRating
+              ),
+            0
+          );
+
+        return (
+          total /
+          movieList.length
+        ).toFixed(1);
+      }
+
+      const mostReviewed =
+        movies.length > 0
+          ? [
+              ...movies,
+            ].sort(
+              (a, b) =>
+                Number(
+                  b.reviewCount ||
+                    0
+                ) -
+                Number(
+                  a.reviewCount ||
+                    0
+                )
+            )[0]
+          : null;
+
+      const totalReviews =
+        movies.reduce(
+          (
+            total,
+            movie
+          ) =>
+            total +
+            Number(
+              movie.reviewCount ||
+                0
+            ),
+          0
+        );
+
+      return {
+        highestNolan:
+          getHighestRated(
+            nolanMovies
+          ),
+
+        highestTarantino:
+          getHighestRated(
+            tarantinoMovies
+          ),
+
+        mostReviewed,
+
+        nolanAverage:
+          getDirectorAverage(
+            nolanMovies
+          ),
+
+        tarantinoAverage:
+          getDirectorAverage(
+            tarantinoMovies
+          ),
+
+        totalReviews,
+      };
+    }, [movies]);
 
   const displayedMovies =
     useMemo(() => {
       let filteredMovies =
-        actorSearchResults !== null
-          ? [...actorSearchResults]
+        actorSearchResults !==
+        null
+          ? [
+              ...actorSearchResults,
+            ]
           : [...movies];
 
-      if (searchTerm.trim()) {
+      if (
+        searchTerm.trim()
+      ) {
         filteredMovies =
           filteredMovies.filter(
             (movie) =>
@@ -128,7 +298,8 @@ function Home() {
       }
 
       if (
-        directorFilter !== "all"
+        directorFilter !==
+        "all"
       ) {
         filteredMovies =
           filteredMovies.filter(
@@ -139,7 +310,8 @@ function Home() {
       }
 
       if (
-        genreFilter !== "all"
+        genreFilter !==
+        "all"
       ) {
         filteredMovies =
           filteredMovies.filter(
@@ -153,7 +325,9 @@ function Home() {
           );
       }
 
-      switch (sortOption) {
+      switch (
+        sortOption
+      ) {
         case "title-asc":
           filteredMovies.sort(
             (a, b) =>
@@ -175,37 +349,44 @@ function Home() {
         case "oldest":
           filteredMovies.sort(
             (a, b) =>
-              a.year - b.year
+              a.year -
+              b.year
           );
           break;
 
         case "newest":
           filteredMovies.sort(
             (a, b) =>
-              b.year - a.year
+              b.year -
+              a.year
           );
           break;
 
         case "highest":
           filteredMovies.sort(
             (a, b) =>
-              (b.averageRating || 0) -
-              (a.averageRating || 0)
+              (b.averageRating ||
+                0) -
+              (a.averageRating ||
+                0)
           );
           break;
 
         case "lowest":
           filteredMovies.sort(
             (a, b) =>
-              (a.averageRating || 0) -
-              (b.averageRating || 0)
+              (a.averageRating ||
+                0) -
+              (b.averageRating ||
+                0)
           );
           break;
 
         case "nolan":
           for (
             let i =
-              filteredMovies.length - 1;
+              filteredMovies.length -
+              1;
             i > 0;
             i--
           ) {
@@ -246,14 +427,26 @@ function Home() {
     const newSort =
       event.target.value;
 
-    setSortOption(newSort);
+    setSortOption(
+      newSort
+    );
 
-    if (newSort === "nolan") {
+    if (
+      newSort === "nolan"
+    ) {
       setNolanSeed(
         (current) =>
           current + 1
       );
     }
+  }
+
+  function handleDirectorChange(
+    director
+  ) {
+    setDirectorFilter(
+      director
+    );
   }
 
   async function handleActorSearch(
@@ -271,7 +464,9 @@ function Home() {
         null
       );
 
-      setActorSearchMessage("");
+      setActorSearchMessage(
+        ""
+      );
 
       return;
     }
@@ -281,7 +476,9 @@ function Home() {
         true
       );
 
-      setActorSearchMessage("");
+      setActorSearchMessage(
+        ""
+      );
 
       const response =
         await fetch(
@@ -312,7 +509,8 @@ function Home() {
 
       if (
         !data.movies ||
-        data.movies.length === 0
+        data.movies.length ===
+          0
       ) {
         setActorSearchMessage(
           data.message ||
@@ -346,20 +544,44 @@ function Home() {
   function handleClearFilters() {
     setSearchTerm("");
 
-    setActorSearchTerm("");
+    setActorSearchTerm(
+      ""
+    );
 
     setActorSearchResults(
       null
     );
 
-    setActorSearchMessage("");
+    setActorSearchMessage(
+      ""
+    );
 
-    setDirectorFilter("all");
+    setDirectorFilter(
+      "all"
+    );
 
-    setGenreFilter("all");
+    setGenreFilter(
+      "all"
+    );
 
     setSortOption(
       "title-asc"
+    );
+  }
+
+  if (moviesLoading) {
+    return (
+      <MovieLoader
+        message="Loading Filmography..."
+      />
+    );
+  }
+
+  if (movieLoadError) {
+    return (
+      <div className="alert alert-danger text-center">
+        {movieLoadError}
+      </div>
     );
   }
 
@@ -369,10 +591,420 @@ function Home() {
         Filmography
       </h1>
 
+      {/* DIRECTOR FILTER CARDS */}
+
+      <section className="director-filter-section mb-4">
+        <h2 className="director-filter-heading text-center">
+          Choose a Director
+        </h2>
+
+        <p className="director-filter-subtitle text-center">
+          Explore the complete
+          collection or focus
+          on one filmmaker.
+        </p>
+
+        <div className="row g-3 justify-content-center">
+          {/* ALL FILMS */}
+
+          <div className="col-lg-4 col-md-4">
+            <button
+              type="button"
+              className={`director-filter-card ${
+                directorFilter ===
+                "all"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                handleDirectorChange(
+                  "all"
+                )
+              }
+            >
+              <span className="director-filter-label">
+                All Films
+              </span>
+
+              <span className="director-filter-count">
+                {
+                  directorCounts.all
+                }{" "}
+                {directorCounts.all ===
+                1
+                  ? "Film"
+                  : "Films"}
+              </span>
+            </button>
+          </div>
+
+          {/* CHRISTOPHER NOLAN */}
+
+          <div className="col-lg-4 col-md-4">
+            <button
+              type="button"
+              className={`director-filter-card ${
+                directorFilter ===
+                "Christopher Nolan"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                handleDirectorChange(
+                  "Christopher Nolan"
+                )
+              }
+            >
+              <span className="director-filter-name">
+                Christopher
+              </span>
+
+              <span className="director-filter-label">
+                Nolan
+              </span>
+
+              <span className="director-filter-count">
+                {
+                  directorCounts.nolan
+                }{" "}
+                {directorCounts.nolan ===
+                1
+                  ? "Film"
+                  : "Films"}
+              </span>
+            </button>
+          </div>
+
+          {/* QUENTIN TARANTINO */}
+
+          <div className="col-lg-4 col-md-4">
+            <button
+              type="button"
+              className={`director-filter-card ${
+                directorFilter ===
+                "Quentin Tarantino"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                handleDirectorChange(
+                  "Quentin Tarantino"
+                )
+              }
+            >
+              <span className="director-filter-name">
+                Quentin
+              </span>
+
+              <span className="director-filter-label">
+                Tarantino
+              </span>
+
+              <span className="director-filter-count">
+                {
+                  directorCounts.tarantino
+                }{" "}
+                {directorCounts.tarantino ===
+                1
+                  ? "Film"
+                  : "Films"}
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FILM STATISTICS */}
+
+      <section className="film-statistics-section mb-4">
+        <div className="text-center mb-4">
+          <h2 className="film-statistics-heading">
+            Film Statistics
+          </h2>
+
+          <p className="film-statistics-subtitle">
+            How the two
+            filmographies stack
+            up according to the
+            Christin Nolantino
+            community.
+          </p>
+        </div>
+
+        <div className="row g-3">
+          {/* HIGHEST RATED NOLAN */}
+
+          <div className="col-lg-3 col-md-6">
+            <div className="film-stat-card h-100">
+              <div className="film-stat-card-body">
+                <span className="film-stat-kicker">
+                  Highest Rated
+                  Nolan
+                </span>
+
+                {filmStats.highestNolan ? (
+                  <>
+                    <Link
+                      to={`/movies/${filmStats.highestNolan._id}`}
+                      className="film-stat-movie"
+                    >
+                      {
+                        filmStats
+                          .highestNolan
+                          .title
+                      }
+                    </Link>
+
+                    <div className="film-stat-value">
+                      ★{" "}
+                      {Number(
+                        filmStats
+                          .highestNolan
+                          .averageRating
+                      ).toFixed(
+                        1
+                      )}
+                      /5
+                    </div>
+
+                    <div className="film-stat-small">
+                      {
+                        filmStats
+                          .highestNolan
+                          .reviewCount
+                      }{" "}
+                      {Number(
+                        filmStats
+                          .highestNolan
+                          .reviewCount
+                      ) === 1
+                        ? "review"
+                        : "reviews"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="film-stat-empty">
+                    No ratings yet
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* HIGHEST RATED TARANTINO */}
+
+          <div className="col-lg-3 col-md-6">
+            <div className="film-stat-card h-100">
+              <div className="film-stat-card-body">
+                <span className="film-stat-kicker">
+                  Highest Rated
+                  Tarantino
+                </span>
+
+                {filmStats.highestTarantino ? (
+                  <>
+                    <Link
+                      to={`/movies/${filmStats.highestTarantino._id}`}
+                      className="film-stat-movie"
+                    >
+                      {
+                        filmStats
+                          .highestTarantino
+                          .title
+                      }
+                    </Link>
+
+                    <div className="film-stat-value">
+                      ★{" "}
+                      {Number(
+                        filmStats
+                          .highestTarantino
+                          .averageRating
+                      ).toFixed(
+                        1
+                      )}
+                      /5
+                    </div>
+
+                    <div className="film-stat-small">
+                      {
+                        filmStats
+                          .highestTarantino
+                          .reviewCount
+                      }{" "}
+                      {Number(
+                        filmStats
+                          .highestTarantino
+                          .reviewCount
+                      ) === 1
+                        ? "review"
+                        : "reviews"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="film-stat-empty">
+                    No ratings yet
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* MOST REVIEWED */}
+
+          <div className="col-lg-3 col-md-6">
+            <div className="film-stat-card h-100">
+              <div className="film-stat-card-body">
+                <span className="film-stat-kicker">
+                  Most Reviewed
+                  Film
+                </span>
+
+                {filmStats.mostReviewed &&
+                Number(
+                  filmStats
+                    .mostReviewed
+                    .reviewCount
+                ) > 0 ? (
+                  <>
+                    <Link
+                      to={`/movies/${filmStats.mostReviewed._id}`}
+                      className="film-stat-movie"
+                    >
+                      {
+                        filmStats
+                          .mostReviewed
+                          .title
+                      }
+                    </Link>
+
+                    <div className="film-stat-value">
+                      {
+                        filmStats
+                          .mostReviewed
+                          .reviewCount
+                      }{" "}
+                      {Number(
+                        filmStats
+                          .mostReviewed
+                          .reviewCount
+                      ) === 1
+                        ? "Review"
+                        : "Reviews"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="film-stat-empty">
+                    No reviews yet
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* TOTAL REVIEWS */}
+
+          <div className="col-lg-3 col-md-6">
+            <div className="film-stat-card h-100">
+              <div className="film-stat-card-body">
+                <span className="film-stat-kicker">
+                  Total Community
+                  Reviews
+                </span>
+
+                <div className="film-stat-total">
+                  {
+                    filmStats.totalReviews
+                  }
+                </div>
+
+                <div className="film-stat-small">
+                  Across the entire
+                  collection
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DIRECTOR SHOWDOWN */}
+
+        <div className="director-showdown mt-4">
+          <h3 className="director-showdown-heading text-center">
+            Director Showdown
+          </h3>
+
+          <div className="row g-3 align-items-stretch">
+            <div className="col-md-5">
+              <div className="showdown-director-card h-100">
+                <span className="showdown-first-name">
+                  Christopher
+                </span>
+
+                <span className="showdown-last-name">
+                  Nolan
+                </span>
+
+                <span className="showdown-rating">
+                  {filmStats.nolanAverage
+                    ? `${filmStats.nolanAverage}/5`
+                    : "No ratings"}
+                </span>
+
+                <span className="showdown-caption">
+                  Average Film
+                  Rating
+                </span>
+              </div>
+            </div>
+
+            <div className="col-md-2 d-flex align-items-center justify-content-center">
+              <div className="showdown-vs">
+                VS
+              </div>
+            </div>
+
+            <div className="col-md-5">
+              <div className="showdown-director-card h-100">
+                <span className="showdown-first-name">
+                  Quentin
+                </span>
+
+                <span className="showdown-last-name">
+                  Tarantino
+                </span>
+
+                <span className="showdown-rating">
+                  {filmStats.tarantinoAverage
+                    ? `${filmStats.tarantinoAverage}/5`
+                    : "No ratings"}
+                </span>
+
+                <span className="showdown-caption">
+                  Average Film
+                  Rating
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p className="director-showdown-note text-center">
+            Director averages
+            include only films
+            that have received at
+            least one community
+            review.
+          </p>
+        </div>
+      </section>
+
+      {/* SEARCH / FILTER CONTROLS */}
+
       <div className="card mb-4">
         <div className="card-body">
-          <div className="row g-3">
+          <div className="row g-3 justify-content-center">
             {/* SEARCH MOVIES */}
+
             <div className="col-lg-3 col-md-6">
               <label
                 htmlFor="movieSearch"
@@ -386,16 +1018,22 @@ function Home() {
                 type="text"
                 className="form-control"
                 placeholder="Search by title..."
-                value={searchTerm}
-                onChange={(event) =>
+                value={
+                  searchTerm
+                }
+                onChange={(
+                  event
+                ) =>
                   setSearchTerm(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
               />
             </div>
 
             {/* SEARCH BY ACTOR */}
+
             <div className="col-lg-3 col-md-6">
               <label
                 htmlFor="actorSearch"
@@ -421,9 +1059,12 @@ function Home() {
                   value={
                     actorSearchTerm
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event
+                  ) =>
                     setActorSearchTerm(
-                      event.target.value
+                      event.target
+                        .value
                     )
                   }
                   disabled={
@@ -433,46 +1074,9 @@ function Home() {
               </form>
             </div>
 
-            {/* DIRECTOR */}
-            <div className="col-lg-2 col-md-4">
-              <label
-                htmlFor="directorFilter"
-                className="form-label"
-              >
-                Director
-              </label>
-
-              <select
-                id="directorFilter"
-                className="form-select"
-                value={
-                  directorFilter
-                }
-                onChange={(event) =>
-                  setDirectorFilter(
-                    event.target.value
-                  )
-                }
-              >
-                <option value="all">
-                  All Directors
-                </option>
-
-                {directors.map(
-                  (director) => (
-                    <option
-                      key={director}
-                      value={director}
-                    >
-                      {director}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
             {/* GENRE */}
-            <div className="col-lg-2 col-md-4">
+
+            <div className="col-lg-3 col-md-6">
               <label
                 htmlFor="genreFilter"
                 className="form-label"
@@ -483,10 +1087,15 @@ function Home() {
               <select
                 id="genreFilter"
                 className="form-select"
-                value={genreFilter}
-                onChange={(event) =>
+                value={
+                  genreFilter
+                }
+                onChange={(
+                  event
+                ) =>
                   setGenreFilter(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
               >
@@ -497,10 +1106,16 @@ function Home() {
                 {genres.map(
                   (genre) => (
                     <option
-                      key={genre}
-                      value={genre}
+                      key={
+                        genre
+                      }
+                      value={
+                        genre
+                      }
                     >
-                      {genre}
+                      {
+                        genre
+                      }
                     </option>
                   )
                 )}
@@ -508,7 +1123,8 @@ function Home() {
             </div>
 
             {/* SORT */}
-            <div className="col-lg-2 col-md-4">
+
+            <div className="col-lg-3 col-md-6">
               <label
                 htmlFor="sortOption"
                 className="form-label"
@@ -519,7 +1135,9 @@ function Home() {
               <select
                 id="sortOption"
                 className="form-select"
-                value={sortOption}
+                value={
+                  sortOption
+                }
                 onChange={
                   handleSortChange
                 }
@@ -533,11 +1151,13 @@ function Home() {
                 </option>
 
                 <option value="oldest">
-                  Oldest to Newest
+                  Oldest to
+                  Newest
                 </option>
 
                 <option value="newest">
-                  Newest to Oldest
+                  Newest to
+                  Oldest
                 </option>
 
                 <option value="highest">
@@ -549,13 +1169,15 @@ function Home() {
                 </option>
 
                 <option value="nolan">
-                  Nolan Timeline ⏳
+                  Nolan Timeline
+                  ⏳
                 </option>
               </select>
             </div>
           </div>
 
           {/* ACTOR SEARCH MESSAGE */}
+
           {actorSearchMessage && (
             <div
               className={`alert ${
@@ -572,6 +1194,7 @@ function Home() {
           )}
 
           {/* SEARCH + CLEAR FILTERS */}
+
           <div className="mt-3 d-flex justify-content-center gap-2">
             <button
               type="button"
@@ -602,13 +1225,17 @@ function Home() {
       </div>
 
       {/* MOVIE CARDS */}
+
       <div className="row">
-        {displayedMovies.length > 0 ? (
+        {displayedMovies.length >
+        0 ? (
           displayedMovies.map(
             (movie) => (
               <div
                 className="col-lg-3 col-md-4 col-sm-6 mb-4"
-                key={movie._id}
+                key={
+                  movie._id
+                }
               >
                 <Link
                   to={`/movies/${movie._id}`}
@@ -653,8 +1280,10 @@ function Home() {
 
                       <p className="card-text mb-0">
                         <strong>
-                          Average Rating:
+                          Average
+                          Rating:
                         </strong>{" "}
+
                         {movie.reviewCount >
                         0 ? (
                           <>
@@ -679,7 +1308,8 @@ function Home() {
           !actorSearchMessage && (
             <div className="col-12">
               <div className="alert alert-secondary text-center">
-                No movies match your search.
+                No movies match
+                your search.
               </div>
             </div>
           )

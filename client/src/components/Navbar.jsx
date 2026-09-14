@@ -17,7 +17,10 @@ function Navbar({
   return (
     <nav className="navbar navbar-expand-md navbar-dark site-navbar">
       <div className="container">
-        <Link className="navbar-brand site-brand" to="/">
+        <Link
+          className="navbar-brand site-brand"
+          to="/"
+        >
           Christin Nolantino
         </Link>
 
@@ -41,13 +44,19 @@ function Navbar({
         >
           <ul className="navbar-nav ms-auto align-items-md-center">
             <li className="nav-item">
-              <Link className="nav-link" to="/">
+              <Link
+                className="nav-link"
+                to="/"
+              >
                 Home
               </Link>
             </li>
 
             <li className="nav-item">
-              <Link className="nav-link" to="/about">
+              <Link
+                className="nav-link"
+                to="/about"
+              >
                 About
               </Link>
             </li>
@@ -55,8 +64,27 @@ function Navbar({
             {currentUser ? (
               <>
                 <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/watchlist"
+                  >
+                    My Watchlist
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/profile"
+                  >
+                    My Profile
+                  </Link>
+                </li>
+
+                <li className="nav-item">
                   <span className="navbar-text nav-welcome">
-                    Welcome, {currentUser.username}!
+                    Welcome,{" "}
+                    {currentUser.username}!
                   </span>
                 </li>
 

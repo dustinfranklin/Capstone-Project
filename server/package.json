@@ -19,6 +19,7 @@
     "express-list-endpoints": "^7.1.1",
     "mongodb": "^7.6.0",
     "mongoose": "^9.9.1",
+    "multer": "^2.4.0",
     "mysql2": "^3.23.2"
   },
   "devDependencies": {

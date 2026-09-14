@@ -657,3 +657,1170 @@ body[data-theme="dark"]
   background: none !important;
   color: #c99b6b;
 }
+
+/* =========================
+   WATCHLIST PAGE
+========================= */
+
+.watchlist-page {
+  min-height: 60vh;
+}
+
+/* Subtitle under My Watchlist */
+
+.watchlist-subtitle {
+  font-size: 1.05rem;
+  font-style: italic;
+}
+
+/* Movie count badge */
+
+.watchlist-count {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Light mode movie count */
+
+body[data-theme="light"]
+  .watchlist-count {
+  background-color: #ffd43b;
+  color: #7a0010;
+  border: 1px solid #d6b300;
+}
+
+/* Dark mode movie count */
+
+body[data-theme="dark"]
+  .watchlist-count {
+  background-color: #7b1e2c;
+  color: #f3ede6;
+  border: 1px solid #a72b3d;
+}
+
+/* Watchlist movie cards */
+
+.watchlist-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color
+      var(--transition-speed),
+    color
+      var(--transition-speed),
+    border-color
+      var(--transition-speed);
+}
+
+.watchlist-card:hover {
+  transform: translateY(-6px);
+}
+
+/* Footer underneath each movie card */
+
+.watchlist-card-footer {
+  background-color: transparent;
+  border-top: 0;
+  padding: 0 15px 18px;
+}
+
+/* Remove button */
+
+.watchlist-remove-button {
+  width: 100%;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.watchlist-remove-button:hover {
+  transform: scale(1.02);
+}
+
+/* Light mode remove button */
+
+body[data-theme="light"]
+  .watchlist-remove-button {
+  color: #c80018;
+  border-color: #c80018;
+}
+
+body[data-theme="light"]
+  .watchlist-remove-button:hover {
+  background-color: #c80018;
+  border-color: #c80018;
+  color: #ffffff;
+}
+
+/* Dark mode remove button */
+
+body[data-theme="dark"]
+  .watchlist-remove-button {
+  color: #e7c28b;
+  border-color: #8b1e2d;
+}
+
+body[data-theme="dark"]
+  .watchlist-remove-button:hover {
+  background-color: #8b1e2d;
+  border-color: #8b1e2d;
+  color: #ffffff;
+}
+
+/* =========================
+   EMPTY WATCHLIST
+========================= */
+
+.watchlist-empty {
+  max-width: 650px;
+  margin: 35px auto 60px;
+}
+
+.watchlist-empty .card {
+  border-radius: 14px;
+}
+
+.watchlist-empty h3 {
+  font-family: "Limelight", sans-serif;
+  letter-spacing: 1px;
+}
+
+.watchlist-empty p {
+  font-size: 1.05rem;
+}
+
+/* Light mode empty card */
+
+body[data-theme="light"]
+  .watchlist-empty
+  .card {
+  background-color:
+    rgba(255, 255, 255, 0.96);
+  border: 2px solid #ffd43b;
+}
+
+/* Dark mode empty card */
+
+body[data-theme="dark"]
+  .watchlist-empty
+  .card {
+  background-color:
+    rgba(31, 22, 24, 0.96);
+  border: 1px solid #6f2632;
+}
+
+/* =========================
+   WATCHLIST RESPONSIVE
+========================= */
+
+@media (max-width: 767.98px) {
+  .watchlist-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .watchlist-count {
+    font-size: 0.8rem;
+  }
+
+  .watchlist-empty {
+    margin-top: 20px;
+  }
+}
+
+/* =========================
+   PROFILE PAGE
+========================= */
+
+.profile-page {
+  padding-bottom: 50px;
+}
+
+/* Main profile card */
+.profile-main-card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Profile picture */
+.profile-picture {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+  border: 4px solid #ffd43b;
+  box-shadow:
+    0 4px 12px
+    rgba(0, 0, 0, 0.25);
+}
+
+/* Initials shown when no picture exists */
+.profile-picture-placeholder {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 3rem;
+  border: 4px solid #ffd43b;
+  box-shadow:
+    0 4px 12px
+    rgba(0, 0, 0, 0.25);
+}
+
+/* Username */
+.profile-username {
+  font-size: 1.05rem;
+  font-weight: 700;
+  opacity: 0.7;
+  margin-bottom: 20px;
+}
+
+/* Bio */
+.profile-bio {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.profile-bio h5 {
+  font-family: "Limelight",
+    sans-serif;
+  margin-bottom: 8px;
+}
+
+.profile-bio p {
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+
+.profile-bio-empty {
+  font-style: italic;
+  opacity: 0.65;
+}
+
+/* Edit area */
+.profile-edit-card {
+  padding: 10px 0;
+}
+
+/* Stats */
+.profile-stat-card {
+  border-radius: 12px;
+}
+
+.profile-stat-card h3 {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.profile-stat-card p {
+  font-weight: 700;
+}
+
+/* Reviews */
+.profile-reviews-section {
+  margin-bottom: 50px;
+}
+
+.profile-review-card {
+  border-radius: 12px;
+}
+
+.profile-review-poster {
+  width: 110px;
+  border-radius: 8px;
+}
+
+.profile-review-text {
+  line-height: 1.6;
+}
+
+/* =========================
+   LIGHT MODE PROFILE
+========================= */
+
+body[data-theme="light"]
+  .profile-picture-placeholder {
+  background-color: #c80018;
+  color: #ffffff;
+}
+
+body[data-theme="light"]
+  .profile-bio {
+  background-color:
+    rgba(255, 212, 59, 0.18);
+  border-left: 4px solid
+    #ffd43b;
+}
+
+body[data-theme="light"]
+  .profile-stat-card {
+  border: 2px solid #ffd43b;
+}
+
+/* =========================
+   DARK MODE PROFILE
+========================= */
+
+body[data-theme="dark"]
+  .profile-picture {
+  border-color: #8b1e2d;
+}
+
+body[data-theme="dark"]
+  .profile-picture-placeholder {
+  background-color: #7b1e2c;
+  color: #f3ede6;
+  border-color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .profile-bio {
+  background-color:
+    rgba(123, 30, 44, 0.25);
+  border-left: 4px solid
+    #8b1e2d;
+}
+
+body[data-theme="dark"]
+  .profile-stat-card {
+  border: 1px solid #6f2632;
+}
+
+/* =========================
+   PROFILE PICTURE UPLOAD
+========================= */
+
+.profile-main-card
+  input[type="file"] {
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.profile-main-card
+  .form-text {
+  margin-top: 7px;
+}
+
+/* =========================
+   MOBILE PROFILE
+========================= */
+
+@media (max-width: 767.98px) {
+  .profile-picture,
+  .profile-picture-placeholder {
+    width: 150px;
+    height: 150px;
+  }
+
+  .profile-picture-placeholder {
+    font-size: 2.5rem;
+  }
+
+  .profile-main-card {
+    text-align: center;
+  }
+
+  .profile-bio {
+    text-align: left;
+  }
+
+  .profile-review-poster {
+    width: 130px;
+  }
+}
+
+/* =========================
+   DIRECTOR FILTER CARDS
+========================= */
+
+.director-filter-section {
+  margin-bottom: 28px;
+}
+
+.director-filter-heading {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.55rem;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.director-filter-subtitle {
+  margin-bottom: 18px;
+  opacity: 0.75;
+}
+
+.director-filter-card {
+  width: 100%;
+  min-height: 125px;
+  padding: 18px 15px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.director-filter-card:hover {
+  transform: translateY(-5px);
+}
+
+.director-filter-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+
+.director-filter-label {
+  display: block;
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.director-filter-count {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* =========================
+   LIGHT MODE
+========================= */
+
+body[data-theme="light"]
+  .director-filter-card {
+  background-color:
+    rgba(255, 255, 255, 0.95);
+  color: #c80018;
+  border: 2px solid #ffd43b;
+
+  box-shadow:
+    0 3px 8px
+    rgba(0, 0, 0, 0.12);
+}
+
+body[data-theme="light"]
+  .director-filter-card:hover {
+  box-shadow:
+    0 7px 16px
+    rgba(0, 0, 0, 0.2);
+}
+
+body[data-theme="light"]
+  .director-filter-count {
+  background-color: #ffd43b;
+  color: #7a0010;
+}
+
+body[data-theme="light"]
+  .director-filter-card.active {
+  background-color: #c80018;
+  color: #ffffff;
+  border-color: #ffd43b;
+
+  box-shadow:
+    0 7px 18px
+    rgba(200, 0, 24, 0.3);
+}
+
+body[data-theme="light"]
+  .director-filter-card.active
+  .director-filter-count {
+  background-color: #ffd43b;
+  color: #7a0010;
+}
+
+/* =========================
+   DARK MODE
+========================= */
+
+body[data-theme="dark"]
+  .director-filter-card {
+  background-color:
+    rgba(31, 22, 24, 0.96);
+  color: #e7c28b;
+  border: 1px solid #6f2632;
+
+  box-shadow:
+    0 3px 10px
+    rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme="dark"]
+  .director-filter-card:hover {
+  border-color: #a72b3d;
+
+  box-shadow:
+    0 7px 18px
+    rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"]
+  .director-filter-count {
+  background-color: #7b1e2c;
+  color: #f3ede6;
+}
+
+body[data-theme="dark"]
+  .director-filter-card.active {
+  background-color: #7b1e2c;
+  color: #ffffff;
+  border-color: #e7c28b;
+
+  box-shadow:
+    0 7px 18px
+    rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"]
+  .director-filter-card.active
+  .director-filter-count {
+  background-color: #e7c28b;
+  color: #4b111b;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 767.98px) {
+  .director-filter-card {
+    min-height: 100px;
+  }
+
+  .director-filter-label {
+    font-size: 1.25rem;
+  }
+
+  .director-filter-heading {
+    font-size: 1.3rem;
+  }
+}
+
+/* =========================
+   REVIEW SORTING
+========================= */
+
+.review-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.review-sort-control {
+  width: 210px;
+}
+
+.review-sort-control
+  .form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+body[data-theme="light"]
+  .review-sort-control
+  .form-select {
+  border-color: #ffd43b;
+}
+
+body[data-theme="dark"]
+  .review-sort-control
+  .form-select {
+  border-color: #6f2632;
+}
+
+@media (max-width: 767.98px) {
+  .review-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .review-sort-control {
+    width: 100%;
+  }
+}
+
+/* =========================
+   FILM STATISTICS
+========================= */
+
+.film-statistics-section {
+  margin-top: 35px;
+  margin-bottom: 35px;
+}
+
+.film-statistics-heading {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.7rem;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.film-statistics-subtitle {
+  opacity: 0.75;
+  margin-bottom: 0;
+}
+
+/* Main stat cards */
+
+.film-stat-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.film-stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.film-stat-card-body {
+  min-height: 180px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.film-stat-kicker {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  opacity: 0.75;
+}
+
+.film-stat-movie {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.film-stat-value {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.film-stat-total {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  margin: 5px 0 10px;
+}
+
+.film-stat-small {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.film-stat-empty {
+  font-style: italic;
+  opacity: 0.65;
+}
+
+/* =========================
+   DIRECTOR SHOWDOWN
+========================= */
+
+.director-showdown {
+  padding: 25px;
+  border-radius: 14px;
+}
+
+.director-showdown-heading {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.showdown-director-card {
+  min-height: 170px;
+  padding: 20px;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+}
+
+.showdown-first-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.showdown-last-name {
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.showdown-rating {
+  font-size: 2rem;
+  font-weight: 900;
+  margin-top: 12px;
+}
+
+.showdown-caption {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.showdown-vs {
+  width: 62px;
+  height: 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-family: "Limelight",
+    sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.director-showdown-note {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+/* =========================
+   LIGHT MODE STATISTICS
+========================= */
+
+body[data-theme="light"]
+  .film-stat-card {
+  background-color:
+    rgba(255, 255, 255, 0.95);
+
+  border: 2px solid
+    #ffd43b;
+
+  box-shadow:
+    0 3px 9px
+    rgba(0, 0, 0, 0.12);
+}
+
+body[data-theme="light"]
+  .film-stat-card:hover {
+  box-shadow:
+    0 7px 16px
+    rgba(0, 0, 0, 0.18);
+}
+
+body[data-theme="light"]
+  .film-stat-movie {
+  color: #c80018;
+}
+
+body[data-theme="light"]
+  .film-stat-movie:hover {
+  color: #8f0011;
+  text-decoration: underline;
+}
+
+body[data-theme="light"]
+  .film-stat-value {
+  color: #c80018;
+}
+
+body[data-theme="light"]
+  .film-stat-total {
+  color: #c80018;
+}
+
+body[data-theme="light"]
+  .director-showdown {
+  background-color:
+    rgba(255, 255, 255, 0.8);
+
+  border: 2px solid
+    #ffd43b;
+}
+
+body[data-theme="light"]
+  .showdown-director-card {
+  background-color:
+    rgba(
+      255,
+      212,
+      59,
+      0.15
+    );
+
+  border: 1px solid
+    #ffd43b;
+}
+
+body[data-theme="light"]
+  .showdown-rating {
+  color: #c80018;
+}
+
+body[data-theme="light"]
+  .showdown-vs {
+  background-color:
+    #c80018;
+
+  color: #ffffff;
+
+  border: 3px solid
+    #ffd43b;
+}
+
+/* =========================
+   DARK MODE STATISTICS
+========================= */
+
+body[data-theme="dark"]
+  .film-stat-card {
+  background-color:
+    rgba(
+      31,
+      22,
+      24,
+      0.96
+    );
+
+  border: 1px solid
+    #6f2632;
+
+  box-shadow:
+    0 3px 10px
+    rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme="dark"]
+  .film-stat-card:hover {
+  border-color: #a72b3d;
+
+  box-shadow:
+    0 7px 18px
+    rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"]
+  .film-stat-movie {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .film-stat-movie:hover {
+  color: #f4d8ac;
+  text-decoration: underline;
+}
+
+body[data-theme="dark"]
+  .film-stat-value {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .film-stat-total {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .director-showdown {
+  background-color:
+    rgba(
+      20,
+      8,
+      10,
+      0.8
+    );
+
+  border: 1px solid
+    #6f2632;
+}
+
+body[data-theme="dark"]
+  .showdown-director-card {
+  background-color:
+    rgba(
+      123,
+      30,
+      44,
+      0.22
+    );
+
+  border: 1px solid
+    #6f2632;
+}
+
+body[data-theme="dark"]
+  .showdown-rating {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .showdown-vs {
+  background-color:
+    #7b1e2c;
+
+  color: #f3ede6;
+
+  border: 3px solid
+    #e7c28b;
+}
+
+/* =========================
+   MOBILE STATISTICS
+========================= */
+
+@media (max-width: 767.98px) {
+  .film-stat-card-body {
+    min-height: 150px;
+  }
+
+  .film-stat-total {
+    font-size: 2.5rem;
+  }
+
+  .director-showdown {
+    padding: 18px;
+  }
+
+  .showdown-vs {
+    margin: 5px 0;
+  }
+
+  .showdown-director-card {
+    min-height: 145px;
+  }
+}
+
+/* =========================
+   MOVIE LOADING ANIMATION
+========================= */
+
+.movie-loader-wrapper {
+  min-height: 260px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.movie-loader-reel {
+  width: 82px;
+  height: 82px;
+
+  position: relative;
+
+  border-radius: 50%;
+
+  animation:
+    movie-reel-spin
+    1.4s
+    linear
+    infinite;
+}
+
+.movie-loader-hole {
+  width: 18px;
+  height: 18px;
+
+  position: absolute;
+
+  border-radius: 50%;
+}
+
+.hole-one {
+  top: 10px;
+  left: 32px;
+}
+
+.hole-two {
+  top: 32px;
+  right: 10px;
+}
+
+.hole-three {
+  bottom: 10px;
+  left: 32px;
+}
+
+.hole-four {
+  top: 32px;
+  left: 10px;
+}
+
+.movie-loader-center {
+  width: 14px;
+  height: 14px;
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border-radius: 50%;
+}
+
+.movie-loader-text {
+  margin-top: 18px;
+  margin-bottom: 0;
+
+  font-family:
+    "Limelight",
+    sans-serif;
+
+  font-size: 1.05rem;
+
+  letter-spacing: 1px;
+}
+
+/* LIGHT MODE */
+
+body[data-theme="light"]
+  .movie-loader-reel {
+  background-color: #c80018;
+
+  border: 4px solid
+    #ffd43b;
+
+  box-shadow:
+    0 4px 12px
+    rgba(
+      0,
+      0,
+      0,
+      0.2
+    );
+}
+
+body[data-theme="light"]
+  .movie-loader-hole {
+  background-color:
+    #ffd43b;
+}
+
+body[data-theme="light"]
+  .movie-loader-center {
+  background-color:
+    #ffffff;
+}
+
+body[data-theme="light"]
+  .movie-loader-text {
+  color: #c80018;
+}
+
+/* DARK MODE */
+
+body[data-theme="dark"]
+  .movie-loader-reel {
+  background-color:
+    #7b1e2c;
+
+  border: 4px solid
+    #e7c28b;
+
+  box-shadow:
+    0 4px 14px
+    rgba(
+      0,
+      0,
+      0,
+      0.5
+    );
+}
+
+body[data-theme="dark"]
+  .movie-loader-hole {
+  background-color:
+    #e7c28b;
+}
+
+body[data-theme="dark"]
+  .movie-loader-center {
+  background-color:
+    #f3ede6;
+}
+
+body[data-theme="dark"]
+  .movie-loader-text {
+  color: #e7c28b;
+}
+
+/* ANIMATION */
+
+@keyframes movie-reel-spin {
+  from {
+    transform:
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+}

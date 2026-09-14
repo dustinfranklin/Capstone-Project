@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   BrowserRouter,
   Routes,
@@ -13,23 +17,36 @@ import About from "./pages/About";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MovieDetails from "./pages/MovieDetails";
+import Watchlist from "./pages/Watchlist";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 
 function App() {
-  const [currentUser, setCurrentUser] =
-    useState(() => {
-      const savedUser =
-        localStorage.getItem("currentUser");
-
-      return savedUser
-        ? JSON.parse(savedUser)
-        : null;
-    });
-
-  const [theme, setTheme] = useState(() => {
+  const [
+    theme,
+    setTheme,
+  ] = useState(() => {
     return (
-      localStorage.getItem("theme") ||
-      "light"
+      localStorage.getItem(
+        "theme"
+      ) || "light"
     );
+  });
+
+  const [
+    currentUser,
+    setCurrentUser,
+  ] = useState(() => {
+    const savedUser =
+      localStorage.getItem(
+        "currentUser"
+      );
+
+    return savedUser
+      ? JSON.parse(
+          savedUser
+        )
+      : null;
   });
 
   useEffect(() => {
@@ -38,68 +55,142 @@ function App() {
       theme
     );
 
-    localStorage.setItem("theme", theme);
+    localStorage.setItem(
+      "theme",
+      theme
+    );
   }, [theme]);
 
   function toggleTheme() {
-    setTheme((currentTheme) =>
-      currentTheme === "light"
-        ? "dark"
-        : "light"
+    setTheme(
+      (currentTheme) =>
+        currentTheme ===
+        "light"
+          ? "dark"
+          : "light"
     );
   }
 
   return (
     <BrowserRouter>
-      <Navbar
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-        theme={theme}
-        toggleTheme={toggleTheme}
-      />
+      <div className="d-flex flex-column min-vh-100">
+        <Navbar
+          theme={theme}
+          setTheme={
+            setTheme
+          }
+          toggleTheme={
+            toggleTheme
+          }
+          currentUser={
+            currentUser
+          }
+          setCurrentUser={
+            setCurrentUser
+          }
+        />
 
-      <div className="container mt-4">
-        <Routes>
-          <Route
-            path="/"
-            element={<Home />}
-          />
+        <main className="container py-4 flex-grow-1">
+          <Routes>
+            {/* HOME */}
 
-          <Route
-            path="/about"
-            element={<About />}
-          />
+            <Route
+              path="/"
+              element={
+                <Home />
+              }
+            />
 
-          <Route
-            path="/login"
-            element={
-              <Login
-                setCurrentUser={
-                  setCurrentUser
-                }
-              />
-            }
-          />
+            {/* ABOUT */}
 
-          <Route
-            path="/register"
-            element={<Register />}
-          />
+            <Route
+              path="/about"
+              element={
+                <About />
+              }
+            />
 
-          <Route
-            path="/movies/:id"
-            element={
-              <MovieDetails
-                currentUser={
-                  currentUser
-                }
-              />
-            }
-          />
-        </Routes>
+            {/* LOGIN */}
+
+            <Route
+              path="/login"
+              element={
+                <Login
+                  setCurrentUser={
+                    setCurrentUser
+                  }
+                />
+              }
+            />
+
+            {/* REGISTER */}
+
+            <Route
+              path="/register"
+              element={
+                <Register />
+              }
+            />
+
+            {/* MOVIE DETAILS */}
+
+            <Route
+              path="/movies/:id"
+              element={
+                <MovieDetails
+                  currentUser={
+                    currentUser
+                  }
+                />
+              }
+            />
+
+            {/* WATCHLIST */}
+
+            <Route
+              path="/watchlist"
+              element={
+                <Watchlist
+                  currentUser={
+                    currentUser
+                  }
+                />
+              }
+            />
+
+            {/* PROFILE */}
+
+            <Route
+              path="/profile"
+              element={
+                <Profile
+                  currentUser={
+                    currentUser
+                  }
+                  setCurrentUser={
+                    setCurrentUser
+                  }
+                />
+              }
+            />
+
+            {/* 404 */}
+
+            <Route
+              path="*"
+              element={
+                <NotFound
+                  currentUser={
+                    currentUser
+                  }
+                />
+              }
+            />
+          </Routes>
+        </main>
+
+        <Footer />
       </div>
-
-      <Footer />
     </BrowserRouter>
   );
 }
