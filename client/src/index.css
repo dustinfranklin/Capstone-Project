@@ -4221,3 +4221,342 @@ body[data-theme="dark"]
     justify-content: center;
   }
 }
+
+/* =========================
+   CLAUDE AI NAVBAR SEARCH
+========================= */
+
+.claude-navbar-area {
+  position: relative;
+  z-index: 1040;
+  padding: 9px 0;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.claude-navbar-form {
+  display: grid;
+  grid-template-columns: auto minmax(200px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.claude-navbar-label {
+  font-family: "Limelight", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.claude-navbar-input.form-control {
+  min-height: 38px;
+  padding: 7px 13px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  box-shadow: none;
+}
+
+.claude-navbar-input.form-control:focus {
+  box-shadow: none;
+}
+
+.claude-navbar-button {
+  min-width: 72px;
+  min-height: 38px;
+  padding: 7px 17px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.claude-navbar-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.claude-navbar-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* =========================
+   CLAUDE RESULT PANEL
+========================= */
+
+.claude-result-panel {
+  margin-top: 9px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 5px 18px
+    rgba(0, 0, 0, 0.22);
+}
+
+.claude-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 8px 13px;
+}
+
+.claude-result-header strong {
+  font-family: "Limelight", sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+}
+
+.claude-result-close {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.claude-result-body {
+  padding: 11px 13px 13px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.claude-result-body p {
+  white-space: pre-line;
+}
+
+.claude-result-error {
+  font-weight: 700;
+}
+
+/* =========================
+   CLAUDE - LIGHT MODE
+========================= */
+
+body[data-theme="light"]
+  .claude-navbar-area {
+  background-color:
+    rgba(255, 248, 220, 0.97);
+  border-bottom:
+    2px solid #ffd43b;
+}
+
+body[data-theme="light"]
+  .claude-navbar-label {
+  color: #c80018;
+}
+
+body[data-theme="light"]
+  .claude-navbar-input.form-control {
+  background-color: #ffffff;
+  color: #2b2b2b;
+  border:
+    1px solid #d6b300;
+}
+
+body[data-theme="light"]
+  .claude-navbar-input.form-control:focus {
+  border-color: #c80018;
+}
+
+body[data-theme="light"]
+  .claude-navbar-input.form-control::placeholder {
+  color: #777777;
+}
+
+body[data-theme="light"]
+  .claude-navbar-button {
+  background-color: #c80018;
+  color: #ffffff;
+  border:
+    1px solid #c80018;
+}
+
+body[data-theme="light"]
+  .claude-navbar-button:hover:not(:disabled) {
+  background-color: #a80018;
+  color: #ffffff;
+  border-color: #a80018;
+}
+
+body[data-theme="light"]
+  .claude-result-panel {
+  background-color:
+    rgba(255, 255, 255, 0.98);
+  color: #2b2b2b;
+  border:
+    1px solid #ffd43b;
+}
+
+body[data-theme="light"]
+  .claude-result-header {
+  background-color: #c80018;
+  color: #ffffff;
+}
+
+body[data-theme="light"]
+  .claude-result-close {
+  color: #ffffff;
+}
+
+body[data-theme="light"]
+  .claude-result-close:hover {
+  background-color:
+    rgba(255, 255, 255, 0.18);
+  color: #ffd43b;
+}
+
+body[data-theme="light"]
+  .claude-result-error {
+  color: #c80018;
+}
+
+/* =========================
+   CLAUDE - DARK MODE
+========================= */
+
+body[data-theme="dark"]
+  .claude-navbar-area {
+  background-color:
+    rgba(20, 8, 10, 0.98);
+  border-bottom:
+    1px solid #6f2632;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-label {
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-input.form-control {
+  background-color:
+    rgba(35, 27, 28, 0.98);
+  color: #f3ede6;
+  border:
+    1px solid #6f2632;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-input.form-control:focus {
+  border-color: #c99b6b;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-input.form-control::placeholder {
+  color: #b9aaa6;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-button {
+  background-color: #7b1e2c;
+  color: #f3ede6;
+  border:
+    1px solid #a72b3d;
+}
+
+body[data-theme="dark"]
+  .claude-navbar-button:hover:not(:disabled) {
+  background-color: #a72b3d;
+  color: #ffffff;
+  border-color: #c99b6b;
+}
+
+body[data-theme="dark"]
+  .claude-result-panel {
+  background-color:
+    rgba(31, 22, 24, 0.99);
+  color: #f3ede6;
+  border:
+    1px solid #6f2632;
+}
+
+body[data-theme="dark"]
+  .claude-result-header {
+  background-color: #7b1e2c;
+  color: #f3ede6;
+}
+
+body[data-theme="dark"]
+  .claude-result-close {
+  color: #f3ede6;
+}
+
+body[data-theme="dark"]
+  .claude-result-close:hover {
+  background-color:
+    rgba(255, 255, 255, 0.1);
+  color: #e7c28b;
+}
+
+body[data-theme="dark"]
+  .claude-result-error {
+  color: #e7c28b;
+}
+
+/* =========================
+   CLAUDE - MOBILE
+========================= */
+
+@media (max-width: 767.98px) {
+  .claude-navbar-area {
+    padding: 10px 0;
+  }
+
+  .claude-navbar-form {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .claude-navbar-label {
+    grid-column: 1 / -1;
+    margin-bottom: -2px;
+    font-size: 0.7rem;
+  }
+
+  .claude-navbar-input.form-control {
+    min-width: 0;
+    font-size: 0.82rem;
+  }
+
+  .claude-navbar-button {
+    min-width: 65px;
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .claude-result-header {
+    padding:
+      8px 11px;
+  }
+
+  .claude-result-body {
+    padding:
+      10px 11px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .claude-navbar-form {
+    grid-template-columns: 1fr;
+  }
+
+  .claude-navbar-button {
+    width: 100%;
+  }
+}

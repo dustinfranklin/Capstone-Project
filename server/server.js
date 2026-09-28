@@ -2,62 +2,46 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import {
-  MongoClient,
-  ObjectId,
-} from "mongodb";
-
+import { MongoClient, ObjectId } from "mongodb";
 
 dotenv.config();
 
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 /* =========================
    BASIC SETUP
 ========================= */
 
-const __filename =
-  fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const __dirname =
-  path.dirname(__filename);
+const uploadsDirectory = path.join(
+  __dirname,
+  "uploads"
+);
 
-const uploadsDirectory =
-  path.join(
-    __dirname,
-    "uploads"
-  );
-
-if (
-  !fs.existsSync(
-    uploadsDirectory
-  )
-) {
-  fs.mkdirSync(
-    uploadsDirectory
-  );
+if (!fs.existsSync(uploadsDirectory)) {
+  fs.mkdirSync(uploadsDirectory);
 }
-
 
 const app = express();
 
-const PORT =
-  process.env.PORT || 4000;
-
+const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
 
 app.use(
   "/uploads",
-  express.static(
-    uploadsDirectory
-  )
+  express.static(uploadsDirectory)
 );
-
 
 /* =========================
    PROFILE PICTURE UPLOAD
@@ -97,7 +81,6 @@ const profilePictureStorage =
       );
     },
   });
-
 
 const profilePictureUpload =
   multer({
@@ -139,7 +122,6 @@ const profilePictureUpload =
     },
   });
 
-
 /* =========================
    MONGODB
 ========================= */
@@ -151,17 +133,13 @@ const client =
 
 let db;
 
-
 /* =========================
    HELPER FUNCTIONS
 ========================= */
 
 function validId(id) {
-  return ObjectId.isValid(
-    id
-  );
+  return ObjectId.isValid(id);
 }
-
 
 function movieReviewStatsPipeline(
   matchStage = null
@@ -225,7 +203,6 @@ function movieReviewStatsPipeline(
   return pipeline;
 }
 
-
 async function getMoviesWithStats(
   matchStage = null
 ) {
@@ -238,7 +215,6 @@ async function getMoviesWithStats(
     )
     .toArray();
 }
-
 
 /* =========================
    BASIC TEST ROUTE
@@ -253,6 +229,148 @@ app.get(
   }
 );
 
+/* =========================
+   CLAUDE MOVIE ASSISTANT
+========================= */
+
+app.post(
+  "/api/claude",
+  async (req, res) => {
+    try {
+      const question =
+        req.body.question?.trim();
+
+      if (!question) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Please enter a question.",
+          });
+      }
+
+      if (
+        question.length > 500
+      ) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Please keep your question under 500 characters.",
+          });
+      }
+
+      const movies =
+        await getMoviesWithStats();
+
+      const movieContext =
+        movies
+          .map((movie) => {
+            const genres =
+              Array.isArray(
+                movie.genre
+              )
+                ? movie.genre.join(
+                    ", "
+                  )
+                : movie.genre ||
+                  "Unknown";
+
+            const averageRating =
+              Number(
+                movie.averageRating ||
+                  0
+              );
+
+            return [
+              `Title: ${movie.title}`,
+              `Year: ${movie.year}`,
+              `Director: ${movie.director}`,
+              `Genre: ${genres}`,
+              `Community Rating: ${
+                averageRating > 0
+                  ? averageRating.toFixed(
+                      1
+                    )
+                  : "Not rated"
+              }`,
+              `Reviews: ${
+                movie.reviewCount ||
+                0
+              }`,
+              `Synopsis: ${
+                movie.synopsis ||
+                "Not available"
+              }`,
+            ].join(" | ");
+          })
+          .join("\n");
+
+      const response =
+        await anthropic.messages.create(
+          {
+            model:
+              "claude-haiku-4-5-20251001",
+
+            max_tokens: 400,
+
+ system: `You are the AI movie assistant for Christin Nolantino, a movie review community centered on the films of Christopher Nolan and Quentin Tarantino.
+
+Answer questions about movies, actors, directors, filmmaking, Christopher Nolan, Quentin Tarantino, and the movies available on the website.
+
+When a user asks about ratings, review counts, or which movies are available on this website, use the current database information below rather than guessing.
+
+Keep responses concise, friendly, and easy to read. Usually answer in one to three short paragraphs.
+
+Do not use Markdown formatting, including asterisks, headings, bullet symbols, or bold text. Return plain text only.
+
+If the user asks something completely unrelated to movies or filmmaking, explain that you are the Christin Nolantino movie assistant and ask for a movie-related question.
+
+CURRENT CHRISTIN NOLANTINO MOVIES:
+
+${movieContext}`,
+
+            messages: [
+              {
+                role: "user",
+                content:
+                  question,
+              },
+            ],
+          }
+        );
+
+      const answer =
+        response.content
+          .filter(
+            (block) =>
+              block.type ===
+              "text"
+          )
+          .map(
+            (block) =>
+              block.text
+          )
+          .join("\n");
+
+      res.json({
+        answer,
+      });
+    } catch (error) {
+      console.error(
+        "Claude API error:",
+        error
+      );
+
+      res
+        .status(500)
+        .json({
+          message:
+            "Claude could not answer your question right now.",
+        });
+    }
+  }
+);
 
 /* =========================
    SEARCH MOVIES BY ACTOR
@@ -274,7 +392,6 @@ app.get(
           });
       }
 
-
       const personResponse =
         await fetch(
           `https://api.themoviedb.org/3/search/person?api_key=${
@@ -286,7 +403,6 @@ app.get(
 
       const personData =
         await personResponse.json();
-
 
       if (
         !personResponse.ok
@@ -304,7 +420,6 @@ app.get(
           });
       }
 
-
       if (
         !personData.results ||
         personData.results
@@ -321,7 +436,6 @@ app.get(
         });
       }
 
-
       const exactMatch =
         personData.results.find(
           (person) =>
@@ -333,11 +447,9 @@ app.get(
               .toLowerCase()
         );
 
-
       const actor =
         exactMatch ||
         personData.results[0];
-
 
       const creditsResponse =
         await fetch(
@@ -346,7 +458,6 @@ app.get(
 
       const creditsData =
         await creditsResponse.json();
-
 
       if (
         !creditsResponse.ok
@@ -364,7 +475,6 @@ app.get(
           });
       }
 
-
       const actorMovieIds =
         new Set(
           (
@@ -376,10 +486,8 @@ app.get(
           )
         );
 
-
       const ourMovies =
         await getMoviesWithStats();
-
 
       const matchingMovies =
         ourMovies.filter(
@@ -391,7 +499,6 @@ app.get(
               )
             )
         );
-
 
       if (
         matchingMovies.length ===
@@ -407,7 +514,6 @@ app.get(
             "Sorry! They're not in these movies!",
         });
       }
-
 
       res.json({
         actor:
@@ -431,7 +537,6 @@ app.get(
     }
   }
 );
-
 
 /* =========================
    GET ALL MOVIES
@@ -463,7 +568,6 @@ app.get(
   }
 );
 
-
 /* =========================
    GET ONE MOVIE
 ========================= */
@@ -485,7 +589,6 @@ app.get(
           });
       }
 
-
       const movie =
         await db
           .collection("movies")
@@ -496,7 +599,6 @@ app.get(
               ),
           });
 
-
       if (!movie) {
         return res
           .status(404)
@@ -505,7 +607,6 @@ app.get(
               "Movie not found.",
           });
       }
-
 
       res.json(
         movie
@@ -525,7 +626,6 @@ app.get(
     }
   }
 );
-
 
 /* =========================
    GET REVIEWS FOR A MOVIE
@@ -547,7 +647,6 @@ app.get(
               "Invalid movie ID.",
           });
       }
-
 
       const reviews =
         await db
@@ -606,7 +705,6 @@ app.get(
           ])
           .toArray();
 
-
       res.json(
         reviews
       );
@@ -626,7 +724,6 @@ app.get(
   }
 );
 
-
 /* =========================
    CREATE REVIEW
 ========================= */
@@ -640,7 +737,6 @@ app.post(
         rating,
         review,
       } = req.body;
-
 
       if (
         !validId(
@@ -658,12 +754,10 @@ app.post(
           });
       }
 
-
       const numericRating =
         Number(
           rating
         );
-
 
       if (
         !numericRating ||
@@ -678,7 +772,6 @@ app.post(
           });
       }
 
-
       const movieId =
         new ObjectId(
           req.params.id
@@ -689,16 +782,15 @@ app.post(
           userId
         );
 
-
       const existingReview =
         await db
           .collection("reviews")
           .findOne({
             movieId,
+
             userId:
               userObjectId,
           });
-
 
       if (
         existingReview
@@ -710,7 +802,6 @@ app.post(
               "You have already reviewed this movie.",
           });
       }
-
 
       const newReview = {
         userId:
@@ -729,14 +820,12 @@ app.post(
           new Date(),
       };
 
-
       const result =
         await db
           .collection("reviews")
           .insertOne(
             newReview
           );
-
 
       res
         .status(201)
@@ -767,7 +856,6 @@ app.post(
   }
 );
 
-
 /* =========================
    UPDATE REVIEW
 ========================= */
@@ -781,7 +869,6 @@ app.put(
         rating,
         review,
       } = req.body;
-
 
       if (
         !validId(
@@ -799,12 +886,10 @@ app.put(
           });
       }
 
-
       const numericRating =
         Number(
           rating
         );
-
 
       if (
         !numericRating ||
@@ -818,7 +903,6 @@ app.put(
               "Rating must be between 1 and 5.",
           });
       }
-
 
       const result =
         await db
@@ -848,7 +932,6 @@ app.put(
             }
           );
 
-
       if (
         result.matchedCount ===
         0
@@ -860,7 +943,6 @@ app.put(
               "You cannot edit this review.",
           });
       }
-
 
       res.json({
         message:
@@ -882,7 +964,6 @@ app.put(
   }
 );
 
-
 /* =========================
    DELETE REVIEW
 ========================= */
@@ -894,7 +975,6 @@ app.delete(
       const {
         userId,
       } = req.body;
-
 
       if (
         !validId(
@@ -912,7 +992,6 @@ app.delete(
           });
       }
 
-
       const result =
         await db
           .collection("reviews")
@@ -928,7 +1007,6 @@ app.delete(
               ),
           });
 
-
       if (
         result.deletedCount ===
         0
@@ -940,7 +1018,6 @@ app.delete(
               "You cannot delete this review.",
           });
       }
-
 
       res.json({
         message:
@@ -962,7 +1039,6 @@ app.delete(
   }
 );
 
-
 /* =========================
    WATCHLIST
    GET USER FAVORITES
@@ -975,7 +1051,6 @@ app.get(
       const {
         userId,
       } = req.params;
-
 
       if (
         !validId(
@@ -990,12 +1065,10 @@ app.get(
           });
       }
 
-
       const userObjectId =
         new ObjectId(
           userId
         );
-
 
       const user =
         await db
@@ -1004,7 +1077,6 @@ app.get(
             _id:
               userObjectId,
           });
-
 
       if (!user) {
         return res
@@ -1015,11 +1087,9 @@ app.get(
           });
       }
 
-
       const favoriteIds =
         user.favorites ||
         [];
-
 
       if (
         favoriteIds.length ===
@@ -1030,7 +1100,6 @@ app.get(
         );
       }
 
-
       const favorites =
         await getMoviesWithStats({
           _id: {
@@ -1038,7 +1107,6 @@ app.get(
               favoriteIds,
           },
         });
-
 
       res.json(
         favorites
@@ -1059,7 +1127,6 @@ app.get(
   }
 );
 
-
 /* =========================
    ADD MOVIE TO WATCHLIST
 ========================= */
@@ -1072,7 +1139,6 @@ app.post(
         userId,
         movieId,
       } = req.params;
-
 
       if (
         !validId(
@@ -1090,7 +1156,6 @@ app.post(
           });
       }
 
-
       const userObjectId =
         new ObjectId(
           userId
@@ -1101,7 +1166,6 @@ app.post(
           movieId
         );
 
-
       const user =
         await db
           .collection("users")
@@ -1109,7 +1173,6 @@ app.post(
             _id:
               userObjectId,
           });
-
 
       if (!user) {
         return res
@@ -1120,7 +1183,6 @@ app.post(
           });
       }
 
-
       const movie =
         await db
           .collection("movies")
@@ -1128,7 +1190,6 @@ app.post(
             _id:
               movieObjectId,
           });
-
 
       if (!movie) {
         return res
@@ -1138,7 +1199,6 @@ app.post(
               "Movie not found.",
           });
       }
-
 
       await db
         .collection("users")
@@ -1155,7 +1215,6 @@ app.post(
             },
           }
         );
-
 
       res
         .status(201)
@@ -1179,7 +1238,6 @@ app.post(
   }
 );
 
-
 /* =========================
    REMOVE MOVIE FROM WATCHLIST
 ========================= */
@@ -1192,7 +1250,6 @@ app.delete(
         userId,
         movieId,
       } = req.params;
-
 
       if (
         !validId(
@@ -1210,7 +1267,6 @@ app.delete(
           });
       }
 
-
       const userObjectId =
         new ObjectId(
           userId
@@ -1221,7 +1277,6 @@ app.delete(
           movieId
         );
 
-
       const user =
         await db
           .collection("users")
@@ -1229,7 +1284,6 @@ app.delete(
             _id:
               userObjectId,
           });
-
 
       if (!user) {
         return res
@@ -1239,7 +1293,6 @@ app.delete(
               "User not found.",
           });
       }
-
 
       await db
         .collection("users")
@@ -1256,7 +1309,6 @@ app.delete(
             },
           }
         );
-
 
       res.json({
         message:
@@ -1278,7 +1330,6 @@ app.delete(
   }
 );
 
-
 /* =========================
    UPLOAD PROFILE PICTURE
 ========================= */
@@ -1296,7 +1347,6 @@ app.post(
         userId,
       } = req.params;
 
-
       if (
         !validId(
           userId
@@ -1310,7 +1360,6 @@ app.post(
           });
       }
 
-
       if (!req.file) {
         return res
           .status(400)
@@ -1320,16 +1369,13 @@ app.post(
           });
       }
 
-
       const userObjectId =
         new ObjectId(
           userId
         );
 
-
       const profilePic =
         `http://localhost:${PORT}/uploads/${req.file.filename}`;
-
 
       const result =
         await db
@@ -1356,7 +1402,6 @@ app.post(
             }
           );
 
-
       if (!result) {
         return res
           .status(404)
@@ -1365,7 +1410,6 @@ app.post(
               "User not found.",
           });
       }
-
 
       res.json({
         message:
@@ -1390,7 +1434,6 @@ app.post(
   }
 );
 
-
 /* =========================
    GET USER PROFILE
 ========================= */
@@ -1402,7 +1445,6 @@ app.get(
       const {
         userId,
       } = req.params;
-
 
       if (
         !validId(
@@ -1417,12 +1459,10 @@ app.get(
           });
       }
 
-
       const userObjectId =
         new ObjectId(
           userId
         );
-
 
       const user =
         await db
@@ -1440,7 +1480,6 @@ app.get(
             }
           );
 
-
       if (!user) {
         return res
           .status(404)
@@ -1449,7 +1488,6 @@ app.get(
               "User not found.",
           });
       }
-
 
       const reviews =
         await db
@@ -1512,10 +1550,8 @@ app.get(
           ])
           .toArray();
 
-
       const reviewCount =
         reviews.length;
-
 
       const averageRating =
         reviewCount > 0
@@ -1533,14 +1569,12 @@ app.get(
             reviewCount
           : 0;
 
-
       const watchlistCount =
         Array.isArray(
           user.favorites
         )
           ? user.favorites.length
           : 0;
-
 
       res.json({
         user: {
@@ -1592,7 +1626,6 @@ app.get(
   }
 );
 
-
 /* =========================
    UPDATE USER PROFILE
 ========================= */
@@ -1604,7 +1637,6 @@ app.put(
       const {
         userId,
       } = req.params;
-
 
       if (
         !validId(
@@ -1619,13 +1651,11 @@ app.put(
           });
       }
 
-
       const {
         firstName,
         lastName,
         bio,
       } = req.body;
-
 
       const cleanFirstName =
         firstName?.trim();
@@ -1636,7 +1666,6 @@ app.put(
       const cleanBio =
         bio?.trim() ||
         "";
-
 
       if (
         !cleanFirstName ||
@@ -1650,7 +1679,6 @@ app.put(
           });
       }
 
-
       if (
         cleanBio.length >
         300
@@ -1662,7 +1690,6 @@ app.put(
               "Bio must be 300 characters or fewer.",
           });
       }
-
 
       const result =
         await db
@@ -1698,7 +1725,6 @@ app.put(
             }
           );
 
-
       if (!result) {
         return res
           .status(404)
@@ -1707,7 +1733,6 @@ app.put(
               "User not found.",
           });
       }
-
 
       res.json({
         message:
@@ -1754,7 +1779,6 @@ app.put(
   }
 );
 
-
 /* =========================
    REGISTER
 ========================= */
@@ -1771,7 +1795,6 @@ app.post(
         password,
       } = req.body;
 
-
       if (
         !firstName ||
         !lastName ||
@@ -1787,18 +1810,15 @@ app.post(
           });
       }
 
-
       const users =
         db.collection(
           "users"
         );
 
-
       const existingEmail =
         await users.findOne({
           email,
         });
-
 
       if (
         existingEmail
@@ -1811,12 +1831,10 @@ app.post(
           });
       }
 
-
       const existingUsername =
         await users.findOne({
           username,
         });
-
 
       if (
         existingUsername
@@ -1829,13 +1847,11 @@ app.post(
           });
       }
 
-
       const hashedPassword =
         await bcrypt.hash(
           password,
           10
         );
-
 
       const newUser = {
         firstName,
@@ -1851,12 +1867,10 @@ app.post(
         bio: "",
       };
 
-
       const result =
         await users.insertOne(
           newUser
         );
-
 
       res
         .status(201)
@@ -1883,7 +1897,6 @@ app.post(
   }
 );
 
-
 /* =========================
    LOGIN
 ========================= */
@@ -1897,7 +1910,6 @@ app.post(
         password,
       } = req.body;
 
-
       if (
         !email ||
         !password
@@ -1910,14 +1922,12 @@ app.post(
           });
       }
 
-
       const user =
         await db
           .collection("users")
           .findOne({
             email,
           });
-
 
       if (!user) {
         return res
@@ -1928,13 +1938,11 @@ app.post(
           });
       }
 
-
       const passwordMatches =
         await bcrypt.compare(
           password,
           user.password
         );
-
 
       if (
         !passwordMatches
@@ -1946,7 +1954,6 @@ app.post(
               "Invalid email or password.",
           });
       }
-
 
       res.json({
         message:
@@ -1993,7 +2000,6 @@ app.post(
   }
 );
 
-
 /* =========================
    CONNECT TO MONGODB
 ========================= */
@@ -2026,6 +2032,5 @@ async function startServer() {
     );
   }
 }
-
 
 startServer();
