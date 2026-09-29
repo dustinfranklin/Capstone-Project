@@ -245,7 +245,7 @@ function Navbar({
             <input
               type="text"
               className="form-control claude-navbar-input"
-              placeholder="Ask about Nolan, Tarantino, actors, ratings..."
+              placeholder="Ask about Nolan and Tarantino movies..."
               value={claudeQuestion}
               onChange={(event) =>
                 setClaudeQuestion(event.target.value)
