@@ -7,6 +7,8 @@ import {
   Link,
 } from "react-router-dom";
 
+import API_URL from "../api";
+
 import MovieLoader
   from "../components/MovieLoader";
 
@@ -44,7 +46,7 @@ function Watchlist({
 
         const response =
           await fetch(
-            `http://localhost:4000/api/users/${currentUser.id}/favorites`
+            `${API_URL}/api/users/${currentUser.id}/favorites`
           );
 
         const data =

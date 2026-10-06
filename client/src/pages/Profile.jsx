@@ -3,6 +3,8 @@ import {
   useState,
 } from "react";
 
+import API_URL from "../api";
+
 import {
   Link,
 } from "react-router-dom";
@@ -177,7 +179,7 @@ function Profile({
 
         const response =
           await fetch(
-            `http://localhost:4000/api/users/${currentUser.id}/profile`
+            `${API_URL}/api/users/${currentUser.id}/profile`
           );
 
         const data =
@@ -386,7 +388,7 @@ function Profile({
 
       const response =
         await fetch(
-          `http://localhost:4000/api/users/${currentUser.id}/profile-picture`,
+          `${API_URL}/api/users/${currentUser.id}/profile-picture`,
           {
             method: "POST",
             body: uploadData,
@@ -484,7 +486,7 @@ function Profile({
 
       const response =
         await fetch(
-          `http://localhost:4000/api/users/${currentUser.id}/profile`,
+          `${API_URL}/api/users/${currentUser.id}/profile`,
           {
             method: "PUT",
 

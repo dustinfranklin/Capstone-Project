@@ -6,6 +6,8 @@ import {
   Link,
 } from "react-router-dom";
 
+import API_URL from "../api";
+
 import DirectorQuote
   from "../components/DirectorQuote";
 
@@ -47,7 +49,7 @@ function Login({
     try {
       const response =
         await fetch(
-          "http://localhost:4000/api/login",
+          `${API_URL}/api/login`,
           {
             method: "POST",
 

@@ -9,6 +9,8 @@ import {
   useParams,
 } from "react-router-dom";
 
+import API_URL from "../api";
+
 import MovieLoader
   from "../components/MovieLoader";
 
@@ -341,7 +343,7 @@ function MovieDetails({
 
         const response =
           await fetch(
-            `http://localhost:4000/api/movies/${id}`
+            `${API_URL}/api/movies/${id}`
           );
 
         const data =
@@ -381,7 +383,7 @@ function MovieDetails({
     try {
       const response =
         await fetch(
-          `http://localhost:4000/api/movies/${id}/reviews`
+          `${API_URL}/api/movies/${id}/reviews`
         );
 
       const data =
@@ -417,7 +419,7 @@ function MovieDetails({
       try {
         const response =
           await fetch(
-            `http://localhost:4000/api/users/${currentUser.id}/favorites`
+            `${API_URL}/api/users/${currentUser.id}/favorites`
           );
 
         const data =
@@ -570,7 +572,7 @@ function MovieDetails({
 
       const response =
         await fetch(
-          `http://localhost:4000/api/users/${currentUser.id}/favorites/${id}`,
+          `${API_URL}/api/users/${currentUser.id}/favorites/${id}`,
           {
             method:
               isFavorite
@@ -629,7 +631,7 @@ function MovieDetails({
     try {
       const response =
         await fetch(
-          `http://localhost:4000/api/movies/${id}/reviews`,
+          `${API_URL}/api/movies/${id}/reviews`,
           {
             method: "POST",
 
@@ -724,7 +726,7 @@ function MovieDetails({
     try {
       const response =
         await fetch(
-          `http://localhost:4000/api/reviews/${reviewId}`,
+          `${API_URL}/api/reviews/${reviewId}`,
           {
             method: "PUT",
 
@@ -793,7 +795,7 @@ function MovieDetails({
     try {
       const response =
         await fetch(
-          `http://localhost:4000/api/reviews/${reviewId}`,
+          `${API_URL}/api/reviews/${reviewId}`,
           {
             method: "DELETE",
 

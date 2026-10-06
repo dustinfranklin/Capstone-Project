@@ -6,6 +6,8 @@ import {
   Link,
 } from "react-router-dom";
 
+import API_URL from "../api";
+
 import DirectorQuote
   from "../components/DirectorQuote";
 
@@ -48,7 +50,7 @@ function Register() {
     try {
       const response =
         await fetch(
-          "http://localhost:4000/api/register",
+          `${API_URL}/api/register`,
           {
             method: "POST",
 

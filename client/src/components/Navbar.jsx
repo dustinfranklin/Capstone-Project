@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import popcornIcon from "../images/popcorn-toggle.png";
 import seatIcon from "../images/seat-toggle.png";
+import API_URL from "../api";
 
 function Navbar({
   currentUser,
@@ -40,7 +41,7 @@ function Navbar({
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/claude",
+        `${API_URL}/api/claude`,
         {
           method: "POST",
 

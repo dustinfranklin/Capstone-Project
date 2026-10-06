@@ -8,6 +8,8 @@ import {
   Link,
 } from "react-router-dom";
 
+import API_URL from "../api";
+
 import DirectorQuote
   from "../components/DirectorQuote";
 
@@ -20,7 +22,7 @@ function About() {
       try {
         const response =
           await fetch(
-            "http://localhost:4000/api/movies"
+            `${API_URL}/api/movies`
           );
 
         const data =
