@@ -1,4 +1,5 @@
-import {
+import React, {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -375,35 +376,37 @@ function MovieDetails({
   }, [id]);
 
 
-  /* =========================
+   /* =========================
      LOAD REVIEWS
   ========================= */
 
-  async function getReviews() {
-    try {
-      const response =
-        await fetch(
-          `${API_URL}/api/movies/${id}/reviews`
+  const getReviews = useCallback(
+    async () => {
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/movies/${id}/reviews`
+          );
+
+        const data =
+          await response.json();
+
+        if (response.ok) {
+          setReviews(data);
+        }
+      } catch (error) {
+        console.error(
+          "Reviews fetch error:",
+          error
         );
-
-      const data =
-        await response.json();
-
-      if (response.ok) {
-        setReviews(data);
       }
-    } catch (error) {
-      console.error(
-        "Reviews fetch error:",
-        error
-      );
-    }
-  }
+    },
+    [id]
+  );
 
   useEffect(() => {
     getReviews();
-  }, [id]);
-
+  }, [getReviews]);
 
   /* =========================
      CHECK WATCHLIST

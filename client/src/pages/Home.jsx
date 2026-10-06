@@ -208,10 +208,6 @@ function Home() {
     setSortOption,
   ] = useState("title-asc");
 
-  const [
-    nolanSeed,
-    setNolanSeed,
-  ] = useState(0);
 
 
   /* =========================
@@ -530,11 +526,10 @@ function Home() {
       directorFilter,
       genreFilter,
       sortOption,
-      nolanSeed,
     ]);
 
 
-  /* =========================
+   /* =========================
      SORT CHANGE
   ========================= */
 
@@ -547,15 +542,6 @@ function Home() {
     setSortOption(
       newSort
     );
-
-    if (
-      newSort === "nolan"
-    ) {
-      setNolanSeed(
-        (current) =>
-          current + 1
-      );
-    }
   }
 
 
