@@ -1329,9 +1329,13 @@ body[data-theme="dark"] .home-fixed-stat-total {
    HOME MOBILE
 ========================= */
 
+/* =========================
+   HOME MOBILE
+========================= */
+
 @media (max-width: 767.98px) {
   .home-page {
-    padding-bottom: 225px;
+    padding-bottom: 105px;
   }
 
   .home-director-quotes {
@@ -1350,29 +1354,43 @@ body[data-theme="dark"] .home-fixed-stat-total {
   }
 
   .home-fixed-stats-inner {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .home-fixed-stat {
-    min-height: 105px;
-    padding: 9px 10px;
+    min-height: 88px;
+    padding: 7px 4px;
   }
 
-  .home-fixed-stat:nth-child(3) {
-    border-left: 0;
-  }
-
-  .home-fixed-stat:nth-child(3),
-  .home-fixed-stat:nth-child(4) {
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .home-fixed-stat-title {
-    font-size: 0.8rem;
+  .home-fixed-stat + .home-fixed-stat {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .home-fixed-stat-label {
-    font-size: 0.6rem;
+    font-size: 0.48rem;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .home-fixed-stat-title {
+    font-size: 0.63rem;
+    line-height: 1.15;
+    margin-bottom: 2px;
+  }
+
+  .home-fixed-stat-value {
+    font-size: 0.65rem;
+  }
+
+  .home-fixed-stat-total {
+    font-size: 1.05rem;
+  }
+
+  .home-fixed-stat-detail,
+  .home-fixed-stat-empty {
+    font-size: 0.55rem;
+    line-height: 1.15;
   }
 }
 
