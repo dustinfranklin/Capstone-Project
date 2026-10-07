@@ -766,6 +766,13 @@ body[data-theme="dark"]
   .director-filter-heading {
     font-size: 1.3rem;
   }
+
+  .movie-poster {
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    width: 100%;
+  }
 }
 
 /* =========================
